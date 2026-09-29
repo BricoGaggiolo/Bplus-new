@@ -11,16 +11,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inject enhancement script
+      - name: Inject enhancement scripts
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('app.html')
           s=p.read_text()
-          tag='<script src="./bplus-test-complete.js"></script>'
-          if tag not in s:
-              s=s.replace('</body>',tag+'</body>')
-              p.write_text(s)
+          tags=['<script src="./bplus-test-complete.js"></script>','<script src="./ui-enhancements.js"></script>']
+          for tag in tags:
+              if tag not in s:
+                  s=s.replace('</body>',tag+'</body>')
+          p.write_text(s)
           PY
       - name: Commit
         run: |
