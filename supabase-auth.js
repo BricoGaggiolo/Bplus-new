@@ -1,21 +1,22 @@
-/* B+ secure auth bridge — Supabase Auth + Passkeys. */
+/* B+ production auth bridge — Supabase Auth + WebAuthn Passkeys. */
 (function(){
+  'use strict';
   const URL='https://ystiqoorxohqgrwefmgv.supabase.co';
   const KEY='sb_publishable_Fcs5BU8QxytiUkfpe8Ii-A_UVlOulz_';
   const VERSION='2.105.0';
-  window.BPlusAuth={
-    load:async function(){
-      if(window.supabaseClient)return window.supabaseClient;
-      if(!window.supabase){await new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@'+VERSION+'/dist/umd/supabase.min.js';s.onload=resolve;s.onerror=reject;document.head.appendChild(s)});}
-      window.supabaseClient=window.supabase.createClient(URL,KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:false,experimental:{passkey:true}}});
-      return window.supabaseClient;
-    },
-    signIn:async function(email,password){const s=await this.load();return s.auth.signInWithPassword({email,password});},
-    signUp:async function(email,password,meta){const s=await this.load();return s.auth.signUp({email,password,options:{data:meta||{}}});},
-    updatePassword:async function(password){const s=await this.load();return s.auth.updateUser({password});},
-    registerPasskey:async function(){const s=await this.load();if(!s.auth.registerPasskey)throw new Error('passkey_not_available');return s.auth.registerPasskey();},
-    signInPasskey:async function(){const s=await this.load();if(!s.auth.signInWithPasskey)throw new Error('passkey_not_available');return s.auth.signInWithPasskey();},
-    session:async function(){const s=await this.load();return s.auth.getSession();},
-    signOut:async function(){const s=await this.load();return s.auth.signOut();}
-  };
+  let clientPromise=null;
+  async function client(){
+    if(clientPromise)return clientPromise;
+    clientPromise=import('https://esm.sh/@supabase/supabase-js@2.105.0').then(({createClient})=>createClient(URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,experimental:{passkey:true}}}));
+    return clientPromise;
+  }
+  async function signIn(email,password){const s=await client();return s.auth.signInWithPassword({email,password})}
+  async function signUp(email,password,meta={}){const s=await client();return s.auth.signUp({email,password,options:{data:meta}})}
+  async function updatePassword(password){const s=await client();return s.auth.updateUser({password})}
+  async function registerPasskey(){const s=await client();return s.auth.registerPasskey()}
+  async function signInPasskey(){const s=await client();return s.auth.signInWithPasskey()}
+  async function getSession(){const s=await client();return s.auth.getSession()}
+  async function signOut(){const s=await client();return s.auth.signOut()}
+  async function listPasskeys(){const s=await client();return s.auth.passkey.list()}
+  window.BPlusAuth={version:VERSION,client,signIn,signUp,updatePassword,registerPasskey,signInPasskey,getSession,signOut,listPasskeys};
 })();
