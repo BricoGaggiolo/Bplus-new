@@ -36,15 +36,6 @@ async function login(){
  loginBtn.disabled=true;
  const u=findUser(e),ps=passwords(),localPass=u?(ps[String(u.id)]??u.password??'1234'):null;
  if(u&&p===localPass){if(localPass==='1234'){setSession(u);sessionStorage.setItem('bplus_force_password','1');location.replace('./change-password-v2.html');return}go(u);return}
- try{
-   if(window.BPlusAuth){
-    const r=await Promise.race([BPlusAuth.signIn(e,p),new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))]);
-    if(!r.error&&r.data?.user){
-      const su=r.data.user,lu=u||{id:su.id,email:su.email||e,nome:su.user_metadata?.nome||su.user_metadata?.name||e.split('@')[0],cognome:su.user_metadata?.cognome||'',ruolo:Number(su.user_metadata?.ruolo||su.user_metadata?.role||1),negozio:su.user_metadata?.negozio||''};
-      go(lu);return;
-    }
-   }
- }catch(x){}
  loginBtn.disabled=false;
  show(u?'Password non corretta':'Email o password non valide');
 }
