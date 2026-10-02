@@ -27,15 +27,15 @@ function read(k){try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e)
 function employees(){const all=[];for(const k of DB_KEYS){const x=read(k);if(Array.isArray(x?.employees))all.push(...x.employees)}return all}
 function passwords(){return read(PWDKEY)||{}}
 function findUser(email){return employees().find(x=>(x.email||'').trim().toLowerCase()===email)||((email===DEMO.email)?DEMO:null)}
-function setSession(u){sessionStorage.setItem('bplus_uid',String(u.id));sessionStorage.setItem('bplus_user',JSON.stringify(u));sessionStorage.setItem('bplus_login_at',String(Date.now()))}
-function go(u){setSession(u);location.replace('./app.html')}
+function setSession(u,force=false){localStorage.setItem('bplus_auth_v2',JSON.stringify({uid:String(u.id),user:u,forcePassword:!!force,loginAt:Date.now()}))}
+function go(u){setSession(u,false);location.replace('./app.html')}
 function show(t){err.textContent=t;err.style.display='block'}
 async function login(){
  const e=em.value.trim().toLowerCase(),p=pw.value;err.style.display='none';
  if(!e||!p){show('Inserisci email e password');return}
  loginBtn.disabled=true;
  const u=findUser(e),ps=passwords(),localPass=u?(ps[String(u.id)]??u.password??'1234'):null;
- if(u&&p===localPass){if(localPass==='1234'){setSession(u);sessionStorage.setItem('bplus_force_password','1');location.replace('./change-password-v2.html');return}go(u);return}
+ if(u&&p===localPass){if(localPass==='1234'){setSession(u,true);location.replace('./change-password-v2.html');return}go(u);return}
  loginBtn.disabled=false;
  show(u?'Password non corretta':'Email o password non valide');
 }
