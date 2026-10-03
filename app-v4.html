@@ -56,17 +56,23 @@ function sundayCanWork(emp,date){
   const policy=sundayPolicy(emp);
   if(policy==='tutte')return true;
   if(policy==='nessuna')return false;
-  const dates=sundayDatesAround(date),idx=dates.indexOf(date),states=dates.slice(0,idx).map(d=>sundayShiftExists(emp,d));
-  if(policy==='ogni3'){const lastWorked=[...dates.slice(0,idx)].reverse().find(d=>sundayShiftExists(emp,d));return !lastWorked||Math.round((new Date(date+'T12:00:00')-new Date(lastWorked+'T12:00:00'))/604800000)>=3}
-  let run=0,lastState=null;
-  for(let i=states.length-1;i>=0;i--){if(lastState===null)lastState=states[i];if(states[i]!==lastState)break;run++}
-  if(run>=2)return !lastState;
-  if(run===1){
-    let prevRun=0,prevState=null;
-    for(let i=states.length-2;i>=0;i--){if(prevState===null)prevState=states[i];if(states[i]!==prevState)break;prevRun++}
-    return prevRun===1?!lastState:lastState;
+  const d=new Date(date+'T12:00:00');
+  if(policy==='ogni3'){
+    const prev=new Date(d);prev.setDate(d.getDate()-14);
+    const p=prev.toISOString().slice(0,10);
+    return !sundayShiftExists(emp,p);
   }
-  return true;
+  // 1 ogni 2 = domeniche sempre alternate: lavoro/riposo/lavoro/riposo.
+  // La prima domenica utile viene assegnata; da quel momento si alterna sempre.
+  const prevSundays=[];
+  for(let i=1;i<=12;i++){
+    const x=new Date(d);x.setDate(d.getDate()-7*i);
+    prevSundays.push(x.toISOString().slice(0,10));
+  }
+  const lastWorked=prevSundays.find(x=>sundayShiftExists(emp,x));
+  if(!lastWorked)return true;
+  const diff=Math.round((d-new Date(lastWorked+'T12:00:00'))/604800000);
+  return diff%2===0;
 }
 function courseOnDate(emp,date){return db.courses.find(c=>String(c.emp)===String(emp)&&c.data===date&&(c.stato==='programmato'||c.stato==='in corso'||c.stato==='completato'))||null}
 function storeDay(store,date){const s=db.stores.find(x=>x.id===store);if(!s)return null;const d=new Date(date+'T12:00:00').getDay();return (s.exceptions&&s.exceptions[date])||((s.days&&s.days['weekly-'+d])||null)}
