@@ -84,7 +84,7 @@ function sundayCanWork(emp,date){
   // Alternanza ordinaria: lavoro/riposo/lavoro/riposo.
   const lastWorkedIndex=sundays.findIndex(x=>sundayShiftExists(emp,x));
   if(lastWorkedIndex<0)return true;
-  return (lastWorkedIndex+1)%2===1;
+  return lastWorkedIndex%2===1;
 }
 function courseOnDate(emp,date){return db.courses.find(c=>String(c.emp)===String(emp)&&c.data===date&&(c.stato==='programmato'||c.stato==='in corso'||c.stato==='completato'))||null}
 function storeDay(store,date){const s=db.stores.find(x=>x.id===store);if(!s)return null;const d=new Date(date+'T12:00:00').getDay();return (s.exceptions&&s.exceptions[date])||((s.days&&s.days['weekly-'+d])||null)}
