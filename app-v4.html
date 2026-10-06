@@ -107,7 +107,7 @@ function shifts(){
         const clickable=sh&&sh.id!=null?' onclick="shiftModal(&quot;'+sh.id+'&quot;)" title="Apri turno"':'';
         return '<td class="'+cellClass+'"'+clickable+'>'+inner+'</td>';
       }).join('');
-      return '<tr><td class="sp-contract">'+contract.toFixed(0)+'</td><td class="sp-note"><b>'+esc(e.nome+' '+e.cognome)+'</b>'+(e.note?'<div class="sp-note-sub">'+esc(e.note)+'</div>':'')+'</td><td class="sp-prev">'+(prev>0?'+':'')+String(prev).replace('.',',')+'</td><td class="sp-hours">'+hours.toFixed(2).replace('.',',')+'</td><td class="sp-balance '+(saldo<0?'neg':saldo>0?'pos':'')+'">'+(saldo>0?'+':'')+String(saldo).replace('.',',')+'</td><td class="sp-name"><b>'+esc(e.nome+' '+e.cognome)+'</b></td>'+dayCells+'</tr>';
+      return '<tr><td class="sp-contract">'+contract.toFixed(0)+'</td><td class="sp-note"><b>'+esc(e.nome+' '+e.cognome)+'</b>'+(e.note?'<div class="sp-note-sub">'+esc(e.note)+'</div>':'')+'</td><td class="sp-prev">'+(prev>0?'+':'')+String(prev).replace('.',',')+'</td><td class="sp-hours">'+hours.toFixed(2).replace('.',',')+'</td><td class="sp-balance '+(saldo<0?'neg':saldo>0?'pos':'')+'">'+(saldo>0?'+':'')+String(saldo).replace('.',',')+'</td>'+dayCells+'</tr>';
     }).join('');
     const head=dates.map(date=>{
       const x=new Date(date+'T12:00:00');
