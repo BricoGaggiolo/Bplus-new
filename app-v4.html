@@ -576,6 +576,7 @@ function shifts(){
       const hours=weekWorkedHours(e,selected,store);
       const contract=Number(e.ore)||40;
       const saldo=Math.round((prev+hours-contract)*100)/100;
+      const showTotals=e.negozio===store;
       const dayCells=dates.map(date=>{
         const h=storeDay(store,date);
         const shiftsForDay=db.shifts.filter(s=>String(s.emp)===String(e.id)&&s.store===store&&s.date===date);
@@ -586,14 +587,14 @@ function shifts(){
         const clickable=sh&&sh.id!=null?' onclick="shiftModal(&quot;'+sh.id+'&quot;)" title="Apri turno"':'';
         return '<td class="'+cellClass+'"'+clickable+'>'+inner+'</td>';
       }).join('');
-      return '<tr><td class="sp-contract">'+contract.toFixed(0)+'</td><td class="sp-note"><b>'+esc(e.nome+' '+e.cognome)+'</b>'+(e.note?'<div class="sp-note-sub">'+esc(e.note)+'</div>':'')+'</td><td class="sp-prev">'+(prev>0?'+':'')+String(prev).replace('.',',')+'</td><td class="sp-hours">'+hours.toFixed(2).replace('.',',')+'</td><td class="sp-balance '+(saldo<0?'neg':saldo>0?'pos':'')+'">'+(saldo>0?'+':'')+String(saldo).replace('.',',')+'</td>'+dayCells+'</tr>';
+      return '<tr><td class="sp-contract">'+contract.toFixed(0)+'</td><td class="sp-note"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><b>'+esc(e.nome+' '+e.cognome)+'</b>'+(showTotals?'<span class="sp-worker-totals"><span>Ore: <b>'+hours.toFixed(2).replace('.',',')+'</b></span><span>Saldo: <b class="sp-balance '+(saldo<0?'neg':saldo>0?'pos':'')+'">'+(saldo>0?'+':'')+String(saldo).replace('.',',')+'</b></span></span>':'')+'</div>'+(e.note?'<div class="sp-note-sub">'+esc(e.note)+'</div>':'')+'</td>'+dayCells+'</tr>';
     }).join('');
     const head=dates.map(date=>{
       const x=new Date(date+'T12:00:00');
       const wd=DAYS[x.getDay()===0?6:x.getDay()-1];
       return '<th class="sp-date"><b>'+wd.toLowerCase()+'</b><span>'+date.slice(8,10)+'/'+date.slice(5,7)+'</span><small>PV</small></th>';
     }).join('');
-    return '<div class="shift-plan section"><div class="sp-title">'+esc(storeName.toUpperCase())+' <span>SETTIMANA N.'+weekNo+'</span></div><div class="tablewrap"><table class="sp-table"><thead><tr><th class="sp-h1">ORE SETTIMANALI A CONTRATTO</th><th class="sp-h2">NOTE</th><th class="sp-h3">SALDO SETT.PREC</th><th class="sp-h4">ORE SETT.</th><th class="sp-h5">SALDO</th>'+head+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(6+dates.length)+'" class="sp-empty">Nessun lavoratore/turno per questo punto vendita.</td></tr>')+'</tbody></table></div></div>';
+    return '<div class="shift-plan section"><div class="sp-title">'+esc(storeName.toUpperCase())+' <span>SETTIMANA N.'+weekNo+'</span></div><div class="tablewrap"><table class="sp-table"><thead><tr><th class="sp-h1">ORE SETTIMANALI A CONTRATTO</th><th class="sp-h2">LAVORATORE / NOTE / ORE / SALDO</th>'+head+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(2+dates.length)+'" class="sp-empty">Nessun lavoratore/turno per questo punto vendita.</td></tr>')+'</tbody></table></div></div>';
   }).join('');
   return controls+blocks;
 }
