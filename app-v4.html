@@ -73,8 +73,8 @@ function shiftStores(){return STORES.map(s=>s[0])}
 function weekStoreState(week,store){if(!db.shiftWeeks||typeof db.shiftWeeks!=='object')db.shiftWeeks={};if(!db.shiftWeeks[week]||typeof db.shiftWeeks[week]!=='object')db.shiftWeeks[week]={};if(!db.shiftWeeks[week][store])db.shiftWeeks[week][store]={status:'bozza'};return db.shiftWeeks[week][store]}
 function weekStoreStatus(week,store){return weekStoreState(week,store).status||'bozza'}
 function allStoresDirectorApproved(week){return shiftStores().every(s=>['approvata_direttore','inviato_titolare','approvata_titolare'].includes(weekStoreStatus(week,s)))}
-function allStoresOwnerApproved(week){return shiftStores().every(s=>weekStoreStatus(week,s)==='approvata_titolare')}function approvedWeekHistory(week,store,limit=4){const out=[];const d=new Date(week+'T12:00:00');for(let i=1;i<=26&&out.length<limit;i++){d.setDate(d.getDate()-7);const w=d.toISOString().slice(0,10);if(weekStoreStatus(w,store)==='approvata_titolare')out.push(w)}return out}
-function continuityProfile(emp,store,week){const history=approvedWeekHistory(week,store,4);const profile={weekdays:new Set(),starts:new Map(),partners:new Map(),partnerDays:new Map()};for(const w of history){const ds=shiftWeekDates(w);for(const s of db.shifts.filter(x=>x.store===store&&ds.includes(x.date)&&String(x.emp)===String(emp.id)&&x.type==='Turno')){const wd=new Date(s.date+'T12:00:00').getDay();profile.weekdays.add(wd);if(s.in)profile.starts.set(wd,s.in)}for(const d of ds){const mine=db.shifts.filter(x=>x.store===store&&x.date===d&&x.type==='Turno'&&String(x.emp)===String(emp.id));if(!mine.length)continue;for(const s of db.shifts.filter(x=>x.store===store&&x.date===d&&x.type==='Turno'&&String(x.emp)!==String(emp.id))){profile.partners.set(String(s.emp),(profile.partners.get(String(s.emp))||0)+1);const wd=new Date(d+'T12:00:00').getDay();profile.partnerDays.set(wd,(profile.partnerDays.get(wd)||0)+1)}}}return{history,profile}}
+function allStoresOwnerApproved(week){return shiftStores().every(s=>weekStoreStatus(week,s)==='approvata_titolare')}function approvedWeekHistory(week,store,limit=12){const out=[];const d=new Date(week+'T12:00:00');for(let i=1;i<=26&&out.length<limit;i++){d.setDate(d.getDate()-7);const w=d.toISOString().slice(0,10);if(weekStoreStatus(w,store)==='approvata_titolare')out.push(w)}return out}
+function continuityProfile(emp,store,week){const history=approvedWeekHistory(week,store,12);const profile={weekdays:new Set(),starts:new Map(),partners:new Map(),partnerDays:new Map()};for(const w of history){const ds=shiftWeekDates(w);for(const s of db.shifts.filter(x=>x.store===store&&ds.includes(x.date)&&String(x.emp)===String(emp.id)&&x.type==='Turno')){const wd=new Date(s.date+'T12:00:00').getDay();profile.weekdays.add(wd);if(s.in)profile.starts.set(wd,s.in)}for(const d of ds){const mine=db.shifts.filter(x=>x.store===store&&x.date===d&&x.type==='Turno'&&String(x.emp)===String(emp.id));if(!mine.length)continue;for(const s of db.shifts.filter(x=>x.store===store&&x.date===d&&x.type==='Turno'&&String(x.emp)!==String(emp.id))){profile.partners.set(String(s.emp),(profile.partners.get(String(s.emp))||0)+1);const wd=new Date(d+'T12:00:00').getDay();profile.partnerDays.set(wd,(profile.partnerDays.get(wd)||0)+1)}}}return{history,profile}}
 
 function approvedAbsence(emp,date){return db.absences.some(a=>String(a.emp)===String(emp)&&a.stato==='approvato'&&date>=a.da&&date<=a.a)}
 function sundayPolicy(emp){return emp.policyDomeniche||'ogni2'}
@@ -130,45 +130,13 @@ function contractPause(e,h){
   if(mins>0)return {minutes:mins,start:timeMin(h?.lunch1||'12:30'),end:timeMin(h?.lunch1||'12:30')+mins};
   return {minutes:0,start:0,end:0};
 }
-function generatedTimes(e,h,kind,worked){
-  const open=timeMin(h.open||'08:30'),close=timeMin(h.close||'17:30');
-  let work=Math.max(0,Math.min(8,Number(worked)||0));
-  let p=contractPause(e,h);
-  if(work<=6)p={minutes:0,start:0,end:0};
-  if(p.minutes>0 && close-open<work*60+p.minutes)work=Math.max(0,(close-open-p.minutes)/60);
-  if(work<=0)return null;
-  if(p.minutes>0 && e.pausaTipo==='fissa'){
-    const ps=p.start,pe=p.end;
-    if(kind==='close'){
-      let start=close-work*60-p.minutes;
-      if(start<open)start=open;
-      if(start>ps)start=Math.max(open,ps-Math.min(60,work*30));
-      const post=Math.max(0,work-(ps-start));
-      const end=Math.max(pe,ps)+post;
-      if(end>close+1)return null;
-      return {in:timeStr(start),breakStart:timeStr(ps),breakEnd:timeStr(pe),out:timeStr(end),worked:Math.max(0,(end-start-p.minutes)/60)};
-    }
-    if(ps<open || pe>close)return generatedTimes({...e,pausaTipo:'flessibile'},h,kind,work);
-    const before=Math.min(work,Math.max(0,ps-open));
-    const after=Math.max(0,work-before);
-    const end=pe+after;
-    if(end>close)return null;
-    return {in:timeStr(open),breakStart:timeStr(ps),breakEnd:timeStr(pe),out:timeStr(end),worked:work};
-  }
-  if(kind==='close'){
-    const end=close;
-    const start=end-work*60-p.minutes;
-    if(start<open)return null;
-    const bs=p.minutes?Math.round(start+Math.min(work*60/2,Math.max(0,(work*60-p.minutes)/2))):0;
-    const be=p.minutes?bs+p.minutes:0;
-    return {in:timeStr(start),breakStart:p.minutes?timeStr(bs):'',breakEnd:p.minutes?timeStr(be):'',out:timeStr(end),worked:work};
-  }
-  const start=open,end=start+work*60+p.minutes;
-  if(end>close)return null;
-  const bs=p.minutes?Math.round(start+(work*60-p.minutes)/2):0;
-  const be=p.minutes?bs+p.minutes:0;
-  return {in:timeStr(start),breakStart:p.minutes?timeStr(bs):'',breakEnd:p.minutes?timeStr(be):'',out:timeStr(end),worked:work};
-}
+const GAGGIOLO_HISTORY_SEED={"alessio":[["08:30","12:00","13:30","19:30",144],["08:30","12:00","13:30","19:00",22],["08:30","12:00","13:30","18:00",16]],"roberto db":[["08:30","12:30","13:30","19:30",37],["08:30","12:30","13:30","18:00",18],["08:30","13:00","14:00","19:30",14]],"andrea":[["09:30","14:00","15:00","19:30",50],["08:30","14:00","15:00","19:30",38],["08:30","14:00","15:00","19:00",11]],"mattia":[["08:30","14:00","15:00","19:30",22],["08:30","11:30","13:30","19:30",16],["08:30","13:00","14:00","19:30",14]],"manuel":[["09:00","13:00","14:00","19:30",15],["08:30","13:00","14:00","19:30",15],["08:30","13:30","14:30","19:30",7]],"allan":[["10:00","13:30","14:30","19:30",6],["08:30","13:00","14:00","19:30",5],["08:30","13:30","14:30","19:30",4]],"pietro":[["08:30","12:30","13:30","19:30",15],["08:30","12:30","13:30","19:00",7],["09:30","12:30","13:30","19:30",6]],"beretta m":[["09:30","13:00","14:00","19:30",10],["09:30","12:30","13:30","19:30",3],["09:00","13:00","14:00","19:30",3]],"alfio":[["08:30","13:00","14:00","18:30",4],["08:30","13:30","14:30","18:30",3],["07:00","12:30","13:30","18:00",1]],"massimo":[["08:30","13:00","14:00","19:00",7],["09:00","12:30","13:30","19:00",3],["09:00","13:30","14:30","19:00",3]]};
+function historicalNameKeys(e){return [...new Set([e&&e.nome,e&&e.cognome,e&&(e.nome+' '+e.cognome),e&&(e.cognome+' '+e.nome)].filter(Boolean).map(x=>String(x).trim().toLowerCase()))]}
+function historicalCandidates(e,store){const out=[];if(store==='GAG')for(const k of historicalNameKeys(e))if(GAGGIOLO_HISTORY_SEED[k])out.push(...GAGGIOLO_HISTORY_SEED[k].map(p=>({p,weight:p[4]||1})));const m=new Map();for(const s of db.shifts)if(String(s.emp)===String(e.id)&&s.store===store&&s.type==='Turno'&&s.in&&s.out){const p=[s.in,s.breakStart||'',s.breakEnd||'',s.out],k=p.join('|'),v=m.get(k)||{p,weight:0};v.weight++;m.set(k,v)}for(const v of m.values())out.push({p:[...v.p,v.weight],weight:v.weight});return out.sort((a,b)=>b.weight-a.weight).slice(0,18)}
+function historicalFitScore(e,store,date,kind){const h=storeDay(store,date),a=historicalCandidates(e,store);if(!h||!a.length)return 0;const open=timeMin(h.open||'08:30'),close=timeMin(h.close||'19:30');let best=20;for(const x of a){const p=x.p;if(!p[0]||!p[3])continue;let s=Math.abs(timeMin(p[0])-open)/30*.35+Math.abs(timeMin(p[3])-close)/30*.25;if(kind==='open'&&p[0]===h.open)s-=7;if(kind==='close'&&p[3]===h.close)s-=7;s-=Math.min(4,Math.log10((x.weight||1)+1)*1.5);best=Math.min(best,s)}return Math.max(-8,best)}
+function historicalTemplate(e,store,date,kind,worked,h){const a=historicalCandidates(e,store);if(!a.length)return null;const open=timeMin(h.open||'08:30'),close=timeMin(h.close||'19:30'),want=Math.max(0,Math.min(10,Number(worked)||0));if(!want)return null;const fixed=e&&e.pausaTipo==='fissa',fs=timeMin(e&&e.pausaInizio||'12:00'),fe=timeMin(e&&e.pausaFine||'13:30'),q=[];for(const x of a){const p=x.p,bs=p[1]?timeMin(p[1]):0,be=p[2]?timeMin(p[2]):0,pause=bs&&be&&be>bs?be-bs:0,base=Math.max(0,(timeMin(p[3])-timeMin(p[0])-pause)/60);if(!base)continue;if(fixed&&pause&&(bs!==fs||be!==fe))continue;let score=Math.abs(base-want)*7-Math.min(12,Math.log10((x.weight||1)+1)*5);if(kind==='open')score+=p[0]===h.open?-18:Math.abs(timeMin(p[0])-open)/30*2;if(kind==='close')score+=p[3]===h.close?-18:Math.abs(timeMin(p[3])-close)/30*2;q.push({p,score,pause})}q.sort((a,b)=>a.score-b.score);for(const x of q){const p=x.p,bs=p[1]?timeMin(p[1]):0,be=p[2]?timeMin(p[2]):0,pause=x.pause;let start=timeMin(p[0]),end=start+want*60+pause;if(kind==='open'){start=open;end=pause?be+want*60:open+want*60}if(kind==='close'){end=close;start=pause?close-want*60-pause:close-want*60}if(start>=open&&end<=close&&end>start){if(want<=6||!pause){end=start+want*60;if(end>close)continue;return{in:timeStr(start),breakStart:'',breakEnd:'',out:timeStr(end),worked:want,source:'storico'}}return{in:timeStr(start),breakStart:timeStr(bs),breakEnd:timeStr(be),out:timeStr(end),worked:want,source:'storico'}}}return null}
+function generatedTimesBase(e,h,kind,worked){const open=timeMin(h.open||'08:30'),close=timeMin(h.close||'17:30');let work=Math.max(0,Math.min(10,Number(worked)||0));let p=contractPause(e,h);if(work<=6)p={minutes:0,start:0,end:0};if(p.minutes>0&&close-open<work*60+p.minutes)work=Math.max(0,(close-open-p.minutes)/60);if(work<=0)return null;if(p.minutes>0&&e.pausaTipo==='fissa'){const ps=p.start,pe=p.end;if(kind==='close'){let start=close-work*60-p.minutes;if(start<open)start=open;if(start>ps)start=Math.max(open,ps-Math.min(60,work*30));const post=Math.max(0,work-(ps-start)),end=Math.max(pe,ps)+post;if(end>close+1)return null;return{in:timeStr(start),breakStart:timeStr(ps),breakEnd:timeStr(pe),out:timeStr(end),worked:Math.max(0,(end-start-p.minutes)/60)}}if(ps<open||pe>close)return generatedTimesBase({...e,pausaTipo:'flessibile'},h,kind,work);const before=Math.min(work,Math.max(0,ps-open)),after=Math.max(0,work-before),end=pe+after;if(end>close)return null;return{in:timeStr(open),breakStart:timeStr(ps),breakEnd:timeStr(pe),out:timeStr(end),worked:work}}if(kind==='close'){const end=close,start=end-work*60-p.minutes;if(start<open)return null;const bs=p.minutes?Math.round(start+Math.min(work*60/2,Math.max(0,(work*60-p.minutes)/2))):0,be=p.minutes?bs+p.minutes:0;return{in:timeStr(start),breakStart:p.minutes?timeStr(bs):'',breakEnd:p.minutes?timeStr(be):'',out:timeStr(end),worked:work}}const start=open,end=start+work*60+p.minutes;if(end>close)return null;const bs=p.minutes?Math.round(start+(work*60-p.minutes)/2):0,be=p.minutes?bs+p.minutes:0;return{in:timeStr(start),breakStart:p.minutes?timeStr(bs):'',breakEnd:p.minutes?timeStr(be):'',out:timeStr(end),worked:work}}
+function generatedTimes(e,h,kind,worked,date,store){return historicalTemplate(e,store,date,kind,worked,h)||generatedTimesBase(e,h,kind,worked)}
 function eligibleForStore(e,store){
   return e.negozio===store||(Array.isArray(e.mobilita)&&e.mobilita.includes(store));
 }
@@ -190,7 +158,7 @@ function generateWeekModal(){
   const w=shiftWeekKey(todayDate());
   openModal('Genera settimana turni',
     '<div class="form"><label>Settimana<input id="genWeek" type="date" value="'+w+'"></label><label>Punto vendita<select id="genStore"><option value="">Tutti i punti vendita</option>'+STORES.map(s=>'<option value="'+s[0]+'">'+s[1]+'</option>').join('')+'</select></label><label style="grid-column:1/-1"><input id="genReplace" type="checkbox"> Sostituisci i turni esistenti</label></div>'+
-    '<div class="card section"><b>Nuovo criterio di generazione</b><ul><li>prima calcola il fabbisogno reale di ogni negozio e giorno</li><li>poi assegna apertura, chiusura e personale minimo</li><li>le ore contrattuali vengono completate senza superare il monte ore</li><li>un lavoratore può essere assegnato a più negozi nella stessa settimana, ma mai a due negozi nello stesso giorno</li><li>rispetta riposi fissi, domeniche, assenze, 11 ore tra i turni e riposo settimanale</li><li>usa le settimane approvate precedenti solo come continuità, non come vincolo</li></ul></div>'+
+    '<div class="card section"><b>Nuovo criterio di generazione</b><ul><li>prima calcola il fabbisogno reale di ogni negozio e giorno</li><li>poi assegna apertura, chiusura e personale minimo</li><li>le ore contrattuali vengono completate senza superare il monte ore</li><li>un lavoratore può essere assegnato a più negozi nella stessa settimana, ma mai a due negozi nello stesso giorno</li><li>rispetta riposi fissi, domeniche, assenze, 11 ore tra i turni e riposo settimanale</li><li>impara gli schemi storici del punto vendita e del singolo lavoratore, privilegiando gli orari realmente usati</li><li>per Gaggiolo usa anche lo storico 2026 fornito: fasce, pause, aperture e chiusure ricorrenti</li><li>può generare turni fino a 10 ore effettive quando lo storico e l'orario del negozio lo rendono coerente</li><li>usa le settimane approvate precedenti come continuità, non come copia obbligatoria</li></ul></div>'+
     '<div class="actions section"><button class="btn green" onclick="generateWeek()">Genera turni</button></div>');
 }
 function generateWeek(){
@@ -312,7 +280,7 @@ function generateWeek(){
     const team=coverageFor(store,date);
     const cap=Math.max(1,Number(e.capacitaGenerale)||3);
     score += team.length/cap;
-    score += Math.max(0,5-remaining)*0.15;
+    score += Math.max(0,5-remaining)*0.15;\n    score += historicalFitScore(e,store,date,kind);
     // Evita di usare sempre lo stesso lavoratore per aperture/chiusure.
     if(kind==='open')score+=st.open*2;
     if(kind==='close')score+=st.close*2;
@@ -322,9 +290,9 @@ function generateWeek(){
   const addShift=(e,store,date,h,kind,forcedHours)=>{
     const st=state[String(e.id)];
     const remaining=Math.max(0,targetOf(e)-st.assigned);
-    const wanted=Math.min(8,remaining,forcedHours==null?8:Math.max(0,forcedHours));
+    const wanted=Math.min(10,remaining,forcedHours==null?10:Math.max(0,forcedHours));
     if(wanted<=0.01)return false;
-    const tm=generatedTimes(e,h,kind,wanted);
+    const tm=generatedTimes(e,h,kind,wanted,date,store);
     if(!tm||tm.worked<=0)return false;
     if(!rest11Ok(e,date,tm))return false;
     const x={id:Date.now()+created+Math.floor(Math.random()*1000),emp:e.id,date,store,in:tm.in,out:tm.out,breakStart:tm.breakStart||'',breakEnd:tm.breakEnd||'',type:'Turno',note:'Generato automaticamente · copertura '+(kind==='open'?'apertura':kind==='close'?'chiusura':'negozio')+' · pausa da contratto'};
@@ -480,7 +448,7 @@ function generateWeek(){
     for(const s of ds){
       const h=r.h;
       if(s.in<h.open||s.out>h.close)warnings.push(r.store+' '+r.date+' turno fuori orario');
-      if(shiftHoursValue(s)>8.01)warnings.push(r.store+' '+r.date+' oltre 8h '+empName(s.emp));
+      if(shiftHoursValue(s)>10.01)warnings.push(r.store+' '+r.date+' oltre 10h '+empName(s.emp));
     }
   }
   for(const e of allWorkers){
