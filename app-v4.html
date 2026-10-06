@@ -194,20 +194,20 @@ function refreshGenerationMode(){
   }
 }
 function storeNameOf(id){const s=STORES.find(x=>x[0]===id);return s?s[1]:id||'—'}
-function generatePresenceWeek(week,stores,dates){
+function generatePresenceWeek(week,stores,dates,replace,onlyStore){
   const selections=[];const conflicts=[];const closed=[];const invalid=[];
   const allWorkers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false);
   for(const e of allWorkers)for(const date of dates){const el=document.getElementById('pr_'+e.id+'_'+date);if(!el||!el.value)continue;const store=el.value;if(!eligibleForStore(e,store)){invalid.push(e.nome+' '+e.cognome+' · '+date);continue}const h=storeDay(store,date);if(h&&h.closed){closed.push(storeNameOf(store)+' · '+date+' · '+e.nome+' '+e.cognome);continue}if(approvedAbsence(e.id,date)){invalid.push(e.nome+' '+e.cognome+' · '+date+' (assenza approvata)');continue}const duplicate=selections.find(x=>String(x.emp)===String(e.id)&&x.date===date);if(duplicate){conflicts.push(e.nome+' '+e.cognome+' · '+date);continue}selections.push({emp:e.id,date,store})}
   if(conflicts.length||invalid.length||closed.length){alert('Controlla le presenze prima di generare.\n'+(conflicts.length?'Conflitti: '+conflicts.join(', ')+'\n':'')+(invalid.length?'Non consentito: '+invalid.join(', ')+'\n':'')+(closed.length?'Negozio chiuso: '+closed.join(', '):''));return false}
   if(!selections.length){alert('Inserisci almeno una presenza in un punto vendita.');return false}
-  const wantedWeek=shiftWeekKey(week);db.shifts=db.shifts.filter(s=>!(dates.includes(s.date)&&s.type==='Turno'));
+  const wantedWeek=shiftWeekKey(week);
+  if(replace){db.shifts=db.shifts.filter(s=>!(dates.includes(s.date)&&s.type==='Turno'&&(!onlyStore||s.store===onlyStore)));}
   for(const p of selections){db.shifts.push({id:Date.now()+Math.floor(Math.random()*1000000),emp:p.emp,date:p.date,store:p.store,in:'',out:'',breakStart:'',breakEnd:'',type:'Turno',orarioDaDefinire:true,note:'Presenza inserita · orario da definire'});}
   for(const store of stores)weekStoreState(wantedWeek,store).status='bozza';
   audit('Turni','Generata settimana presenze '+wantedWeek+' · '+selections.length+' presenze');save();closeModal();render();alert('Presenze generate: '+selections.length+'. Gli orari sono da definire e saranno inseriti dal Direttore.');return true;
 }
 function generateWeek(){
   const week=shiftWeekKey(genWeek.value),onlyStore=genStore.value,dates=shiftWeekDates(week),mode=genMode.value;
-  if(mode==='presence'){generatePresenceWeek(week,onlyStore?[onlyStore]:shiftStores(),dates);return;}
   if(!db.shiftWeeks||typeof db.shiftWeeks!=='object')db.shiftWeeks={};
   const replace=!!genReplace.checked;
   const stores=onlyStore?[onlyStore]:shiftStores();
@@ -215,6 +215,7 @@ function generateWeek(){
   if(existingWeekShifts.length&&!replace){
     if(!confirm('La settimana '+weekLabel(week)+' contiene già turni. Vuoi sovrascriverli?'))return;
   }
+  if(mode==='presence'){generatePresenceWeek(week,stores,dates,replace,onlyStore);return;}
 
   // La generazione parte da zero nello scope scelto. Le eventuali ore già
   // presenti negli altri negozi restano però conteggiate nel monte ore del lavoratore.
