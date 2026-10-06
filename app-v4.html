@@ -280,7 +280,8 @@ function generateWeek(){
     const team=coverageFor(store,date);
     const cap=Math.max(1,Number(e.capacitaGenerale)||3);
     score += team.length/cap;
-    score += Math.max(0,5-remaining)*0.15;\n    score += historicalFitScore(e,store,date,kind);
+    score += Math.max(0,5-remaining)*0.15;
+    score += historicalFitScore(e,store,date,kind);
     // Evita di usare sempre lo stesso lavoratore per aperture/chiusure.
     if(kind==='open')score+=st.open*2;
     if(kind==='close')score+=st.close*2;
@@ -389,7 +390,7 @@ function generateWeek(){
       if(!candidates.length)break;
       let placed=false;
       for(const p of candidates){
-        const maxDay=Math.min(8,p.remaining);
+        const maxDay=Math.min(10,p.remaining);
         if(addShift(e,p.store,p.date,p.h,p.kind,maxDay)){placed=true;break}
       }
       if(!placed)break;
