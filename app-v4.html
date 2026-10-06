@@ -38,7 +38,11 @@ function employees(){if(user.ruolo!==3)return '<div class="card">Accesso non dis
 function deleteEmployee(id){if(user.ruolo!==3)return;const e=db.employees.find(x=>String(x.id)===String(id));if(!e)return;if(String(e.id)===String(user.id)){alert('Non puoi eliminare il tuo stesso account.');return}const nome=(e.nome+' '+e.cognome).trim()||e.email||'questo lavoratore';if(!confirm('Eliminare definitivamente '+nome+'?\n\nVerranno eliminati anche turni, assenze, corsi, presenze e notifiche collegati al lavoratore.'))return;const idv=String(id);db.employees=db.employees.filter(x=>String(x.id)!==idv);db.shifts=db.shifts.filter(x=>String(x.emp)!==idv);db.absences=db.absences.filter(x=>String(x.emp)!==idv);db.courses=db.courses.filter(x=>String(x.emp)!==idv);db.attendance=db.attendance.filter(x=>String(x.emp)!==idv);db.notifications=db.notifications.filter(x=>String(x.emp)!==idv);save();render()}
 function employeeModal(id){let e=id?db.employees.find(x=>x.id==id):{id:Date.now(),nome:'',cognome:'',email:'',telefono:'',ruolo:1,negozio:'GAG',stato:'attivo',inTurni:true,contratto:'indeterminato',ore:40,capacitaGenerale:3,policyDomeniche:'ogni2',pausaTipo:'flessibile',pausaInizio:'12:00',pausaFine:'13:30',pausaMin:60,riposiFissi:[],compensativi:[],mobilita:[]};window._emp=e;openModal('Scheda lavoratore',`<div class="tabs"><button class="active" onclick="empTab('an')">Anagrafica</button><button onclick="empTab('ct')">Contratto & Turni</button><button onclick="empTab('as')">Assenze</button></div><div id="etab"></div>`);empTab('an')}
 function shiftHoursValue(s){if(!s||s.type!=='Turno'||!s.in||!s.out)return 0;const m=t=>{const q=String(t).split(':').map(Number);return q[0]*60+q[1]};let total=Math.max(0,m(s.out)-m(s.in));if(s.breakStart&&s.breakEnd)total-=Math.max(0,m(s.breakEnd)-m(s.breakStart));return Math.max(0,total)/60}
-function recoveryAuto(emp){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));if(!e)return 0;const now=shiftWeekKey(todayDate());const weeks=new Set(db.shifts.filter(s=>String(s.emp)===String(e.id)&&s.date<=todayDate()).map(s=>shiftWeekKey(s.date)));weeks.add(now);let total=0;for(const w of weeks){const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&shiftWeekKey(s.date)===w).reduce((n,s)=>n+shiftHoursValue(s),0);const hasActivity=worked>0||db.absences.some(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.da<=shiftWeekDates(w)[6]&&a.a>=shiftWeekDates(w)[0]);if(!hasActivity)continue;total+=(Number(e.ore)||40)-worked}return Math.round(total*100)/100}
+function approvedFerieDays(emp,week){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));if(!e)return 0;const ds=shiftWeekDates(week);return ds.filter(d=>db.absences.some(a=>String(a.emp)===String(e.id)&&a.tipo==='Ferie'&&a.stato==='approvato'&&d>=a.da&&d<=a.a)).length}
+function ferieHoursForWeek(emp,week){return approvedFerieDays(emp,week)*9}
+function weekTotalHours(emp,week,store){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));if(!e)return 0;const ds=shiftWeekDates(week);const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&ds.includes(s.date)&&s.type==='Turno'&&(!store||s.store===store)).reduce((n,s)=>n+shiftHoursValue(s),0);const ferie=ferieHoursForWeek(e,week);return Math.round((worked+ferie)*100)/100}
+function fullWeekFerie(emp,week){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));return !!e&&approvedFerieDays(e,week)===7}
+function recoveryAuto(emp){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));if(!e)return 0;const now=shiftWeekKey(todayDate());const weeks=new Set(db.shifts.filter(s=>String(s.emp)===String(e.id)&&s.date<=todayDate()).map(s=>shiftWeekKey(s.date)));for(const a of db.absences.filter(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.tipo==='Ferie')){weeks.add(shiftWeekKey(a.da));weeks.add(shiftWeekKey(a.a))}weeks.add(now);let total=0;for(const w of weeks){if(fullWeekFerie(e,w))continue;const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&shiftWeekKey(s.date)===w).reduce((n,s)=>n+shiftHoursValue(s),0);const ferie=ferieHoursForWeek(e,w);const hasActivity=worked>0||ferie>0||db.absences.some(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.da<=shiftWeekDates(w)[6]&&a.a>=shiftWeekDates(w)[0]);if(!hasActivity)continue;total+=(Number(e.ore)||40)-(worked+ferie)}return Math.round(total*100)/100}
 function recoveryBalance(emp){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));return e?Math.round(((Number(e.oreRecuperoBase)||0)+recoveryAuto(e))*100)/100:0}
 function recoveryLabel(emp){const n=recoveryBalance(emp);return (n>0?'+':'')+String(n).replace('.',',')+' h'}function empTab(t){
   let e=window._emp;
@@ -673,20 +677,21 @@ function isoWeekNumber(date){
   return Math.ceil((((d-start)/86400000)+1)/7);
 }
 function weekWorkedHours(emp,week,store){
-  const ds=shiftWeekDates(week);
-  return Math.round(db.shifts.filter(s=>String(s.emp)===String(emp.id)&&s.store===store&&ds.includes(s.date)&&s.type==='Turno').reduce((n,s)=>n+shiftHoursValue(s),0)*100)/100;
+  return weekTotalHours(emp,week,store);
 }
 function recoveryBalanceBeforeWeek(emp,week){
   const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));
   if(!e)return 0;
   const first=shiftWeekDates(week)[0];
   const weeks=new Set(db.shifts.filter(s=>String(s.emp)===String(e.id)&&s.date<first).map(s=>shiftWeekKey(s.date)));
+  for(const a of db.absences.filter(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.tipo==='Ferie'&&a.a<first)){weeks.add(shiftWeekKey(a.da));weeks.add(shiftWeekKey(a.a))}
   let total=Number(e.oreRecuperoBase)||0;
   for(const w of weeks){
-    const ds=shiftWeekDates(w);
-    const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&ds.includes(s.date)&&s.type==='Turno').reduce((n,s)=>n+shiftHoursValue(s),0);
-    const hasActivity=worked>0||db.absences.some(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.da<=ds[6]&&a.a>=ds[0]);
-    if(hasActivity)total+=(Number(e.ore)||40)-worked;
+    if(fullWeekFerie(e,w))continue;
+    const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&shiftWeekKey(s.date)===w&&s.type==='Turno').reduce((n,s)=>n+shiftHoursValue(s),0);
+    const ferie=ferieHoursForWeek(e,w);
+    const hasActivity=worked>0||ferie>0||db.absences.some(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.da<=shiftWeekDates(w)[6]&&a.a>=shiftWeekDates(w)[0]);
+    if(hasActivity)total+=(Number(e.ore)||40)-(worked+ferie);
   }
   return Math.round(total*100)/100;
 }
