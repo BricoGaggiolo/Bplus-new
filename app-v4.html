@@ -238,7 +238,7 @@ function generateWeek(){
   const warnings=[];
   let created=0;
 
-  const dayNo=date=>new Date(date+'T12:00:00').getDay();
+  const dayNo=date=>{const j=new Date(date+'T12:00:00').getDay();return j===0?6:j-1};
   const hourMin=t=>timeMin(t||'00:00');
   const shiftStart=s=>hourMin(s?.in);
   const shiftEnd=s=>hourMin(s?.out);
@@ -247,7 +247,7 @@ function generateWeek(){
     const d=dayNo(date);
     if((e.riposiFissi||[]).includes(String(d)))return true;
     if(approvedAbsence(e.id,date))return true;
-    if(d===0&&!sundayCanWork(e,date))return true;
+    if(d===6&&!sundayCanWork(e,date))return true;
     return false;
   };
 
@@ -298,7 +298,7 @@ function generateWeek(){
   const scoreWorker=(e,store,date,kind)=>{
     const st=state[String(e.id)],target=targetOf(e),remaining=Math.max(0,target-st.assigned);
     const cp=continuityProfile(e,store,week);
-    const wd=dayNo(date);
+    const wd=new Date(date+'T12:00:00').getDay();
     let score=0;
     // Priorità forte alla copertura, poi distribuzione delle ore e continuità.
     score += (st.assigned/Math.max(1,target))*12;
@@ -403,7 +403,7 @@ function generateWeek(){
           const openMissing=req&&req.minOpen&&!team.some(s=>s.in===h.open);
           let kind=closeMissing?'close':openMissing?'open':'middle';
           const cp=continuityProfile(e,store,week);
-          const wd=dayNo(date);
+          const wd=new Date(date+'T12:00:00').getDay();
           let score=shortage*30+(closeMissing?20:0)+(openMissing?10:0);
           score-=cp.profile.weekdays.has(wd)?8:0;
           score-=cp.profile.starts.get(wd)?3:0;
@@ -435,7 +435,7 @@ function generateWeek(){
   // spostiamo quel turno su un altro giorno compatibile.
   for(const e of allWorkers){
     const st=state[String(e.id)];
-    const sunday=dates.find(d=>dayNo(d)===0&&st.days.has(d));
+    const sunday=dates.find(d=>dayNo(d)===6&&st.days.has(d));
     if(!sunday)continue;
     const options=(e.compensativi||[]).map(String).filter(x=>!((e.riposiFissi||[]).includes(x))).map(Number);
     if(!options.length)continue;
