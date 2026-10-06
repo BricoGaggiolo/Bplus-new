@@ -5,13 +5,13 @@
 .sp-table{width:100%;min-width:1250px;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;table-layout:fixed}
 .sp-table th,.sp-table td{border:1px solid #777;padding:2px 3px;height:29px;vertical-align:middle;text-align:center}
 .sp-table thead th{background:#f4dc92;color:#111;font-weight:800}
-.sp-h1{width:105px}.sp-h2{width:90px}.sp-h3{width:88px}.sp-h4{width:72px}.sp-h5{width:55px}.sp-worker-head{width:135px;background:#fff!important;border-top:1px solid #777!important}
+.sp-h1{width:105px}.sp-h2{width:135px}.sp-h3{width:88px}.sp-h4{width:72px}.sp-h5{width:55px}
 .sp-date{width:92px;padding:0!important}.sp-date b{display:inline-block;width:50%;padding:5px 0;font-style:italic}.sp-date span{display:inline-block;width:50%;padding:5px 0}.sp-date small{display:block;border-top:1px solid #777;padding:2px 0;font-size:9px}
 .sp-contract,.sp-prev,.sp-hours,.sp-balance{background:#fff}.sp-prev{background:#a9c9e8!important}.sp-hours{font-weight:800;background:#fff3c4}.sp-balance{font-weight:800;background:#fff3c4}.sp-balance.neg{color:#8b1e1e}.sp-balance.pos{color:#176b38}
-.sp-note{text-align:left!important;color:#222}.sp-name{text-align:left!important;background:#ffeaa8;font-weight:800}
+.sp-note{text-align:left!important;color:#222;background:#ffeaa8;font-weight:800}.sp-note-sub{font-weight:400;font-size:9px;color:#555}
 .sp-day{padding:0!important;background:#fff;cursor:pointer}.sp-day:hover{background:#f4f4f4}.sp-closed{background:#666!important;cursor:default}
 .sp-times{display:grid;grid-template-columns:repeat(4,1fr);min-height:28px}.sp-times span{display:flex;align-items:center;justify-content:center;border-right:1px solid #999;font-size:10px;font-style:italic}.sp-times span:last-child{border-right:0}.sp-special{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-style:italic}.sp-empty{padding:14px!important;color:#666;background:#f7f7f7}
-@media(max-width:900px){.sp-table{min-width:1100px}.sp-date{width:86px}.sp-name{width:125px}}
+@media(max-width:900px){.sp-table{min-width:1100px}.sp-date{width:86px} .sp-note{width:125px}}
 </style></style></head><body><aside id="side" class="side"><div class="brand"><div class="simple-logo" aria-label="B+">B+</div><span>B+ Gestionale HR</span></div><div id="who" class="who"></div><nav id="nav" class="nav"></nav></aside><main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">Versione HR completa</div></div><div class="actions"><button class="btn secondary" onclick="toggleMenu()">☰</button><button class="btn" onclick="logout()">Esci</button></div></header><section id="view"></section></main><nav id="bottom" class="bottom"></nav><div id="modal" class="modal"><div class="dialog"><div class="top"><h2 id="mtitle"></h2><button class="btn secondary" onclick="closeModal()">Chiudi</button></div><div id="mbody"></div></div></div><script src="./auth-v3.js?build=20261002-login-v3"></script><script>
 'use strict';
 const auth=BPlusAuth.get();
@@ -107,14 +107,14 @@ function shifts(){
         const clickable=sh&&sh.id!=null?' onclick="shiftModal(&quot;'+sh.id+'&quot;)" title="Apri turno"':'';
         return '<td class="'+cellClass+'"'+clickable+'>'+inner+'</td>';
       }).join('');
-      return '<tr><td class="sp-contract">'+contract.toFixed(0)+'</td><td class="sp-note">'+esc(e.note||'')+'</td><td class="sp-prev">'+(prev>0?'+':'')+String(prev).replace('.',',')+'</td><td class="sp-hours">'+hours.toFixed(2).replace('.',',')+'</td><td class="sp-balance '+(saldo<0?'neg':saldo>0?'pos':'')+'">'+(saldo>0?'+':'')+String(saldo).replace('.',',')+'</td><td class="sp-name"><b>'+esc(e.nome+' '+e.cognome)+'</b></td>'+dayCells+'</tr>';
+      return '<tr><td class="sp-contract">'+contract.toFixed(0)+'</td><td class="sp-note"><b>'+esc(e.nome+' '+e.cognome)+'</b>'+(e.note?'<div class="sp-note-sub">'+esc(e.note)+'</div>':'')+'</td><td class="sp-prev">'+(prev>0?'+':'')+String(prev).replace('.',',')+'</td><td class="sp-hours">'+hours.toFixed(2).replace('.',',')+'</td><td class="sp-balance '+(saldo<0?'neg':saldo>0?'pos':'')+'">'+(saldo>0?'+':'')+String(saldo).replace('.',',')+'</td><td class="sp-name"><b>'+esc(e.nome+' '+e.cognome)+'</b></td>'+dayCells+'</tr>';
     }).join('');
     const head=dates.map(date=>{
       const x=new Date(date+'T12:00:00');
       const wd=DAYS[x.getDay()===0?6:x.getDay()-1];
       return '<th class="sp-date"><b>'+wd.toLowerCase()+'</b><span>'+date.slice(8,10)+'/'+date.slice(5,7)+'</span><small>PV</small></th>';
     }).join('');
-    return '<div class="shift-plan section"><div class="sp-title">'+esc(storeName.toUpperCase())+' <span>SETTIMANA N.'+weekNo+'</span></div><div class="tablewrap"><table class="sp-table"><thead><tr><th class="sp-h1">ORE SETTIMANALI A CONTRATTO</th><th class="sp-h2">NOTE</th><th class="sp-h3">SALDO SETT.PREC</th><th class="sp-h4">ORE SETT.</th><th class="sp-h5">SALDO</th><th class="sp-worker-head"></th>'+head+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(6+dates.length)+'" class="sp-empty">Nessun lavoratore/turno per questo punto vendita.</td></tr>')+'</tbody></table></div></div>';
+    return '<div class="shift-plan section"><div class="sp-title">'+esc(storeName.toUpperCase())+' <span>SETTIMANA N.'+weekNo+'</span></div><div class="tablewrap"><table class="sp-table"><thead><tr><th class="sp-h1">ORE SETTIMANALI A CONTRATTO</th><th class="sp-h2">NOTE</th><th class="sp-h3">SALDO SETT.PREC</th><th class="sp-h4">ORE SETT.</th><th class="sp-h5">SALDO</th>'+head+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(6+dates.length)+'" class="sp-empty">Nessun lavoratore/turno per questo punto vendita.</td></tr>')+'</tbody></table></div></div>';
   }).join('');
   return controls+blocks;
 }
