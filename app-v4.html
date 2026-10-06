@@ -293,11 +293,12 @@ function generatePresenceWeek(week,stores,dates,replace,onlyStore){
 function generateWeek(){
   const week=shiftWeekKey(genWeek.value),onlyStore=genStore.value,dates=shiftWeekDates(week),mode=genMode.value;
   if(!db.shiftWeeks||typeof db.shiftWeeks!=='object')db.shiftWeeks={};
-  const replace=!!genReplace.checked;
+  let replace=!!genReplace.checked;
   const stores=onlyStore?[onlyStore]:shiftStores();
-  const existingWeekShifts=db.shifts.filter(s=>dates.includes(s.date)&&(s.type==='Turno'||s.type==='Corso'));
+  const existingWeekShifts=db.shifts.filter(s=>dates.includes(s.date)&&(s.type==='Turno'||s.type==='Corso')&&(!onlyStore||s.store===onlyStore));
   if(existingWeekShifts.length&&!replace){
-    if(!confirm('La settimana '+weekLabel(week)+' contiene già turni. Vuoi sovrascriverli?'))return;
+    if(!confirm('La settimana '+weekLabel(week)+' contiene già turni nel periodo selezionato. Vuoi sovrascriverli?'))return;
+    replace=true;
   }
   if(mode==='presence'){generatePresenceWeek(week,stores,dates,replace,onlyStore);return;}
 
