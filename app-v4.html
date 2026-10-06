@@ -190,7 +190,7 @@ function generateWeekModal(){
   const w=shiftWeekKey(todayDate());
   openModal('Genera settimana turni',
     '<div class="form"><label>Settimana<input id="genWeek" type="date" value="'+w+'"></label><label>Punto vendita<select id="genStore"><option value="">Tutti i punti vendita</option>'+STORES.map(s=>'<option value="'+s[0]+'">'+s[1]+'</option>').join('')+'</select></label><label style="grid-column:1/-1"><input id="genReplace" type="checkbox"> Sostituisci i turni esistenti</label></div>'+
-    '<div class="card section"><b>La generazione rispetta:</b><ul><li>ore contrattuali settimanali complessive, anche se il lavoratore opera in più negozi</li><li>pause configurate nel contratto</li><li>riposi fissi e policy domeniche</li><li>assenze approvate e corsi</li><li>apertura e chiusura del punto vendita</li><li>minimo personale, apertura e chiusura del negozio</li></ul></div>'+
+    '<div class="card section"><b>Nuovo criterio di generazione</b><ul><li>prima calcola il fabbisogno reale di ogni negozio e giorno</li><li>poi assegna apertura, chiusura e personale minimo</li><li>le ore contrattuali vengono completate senza superare il monte ore</li><li>un lavoratore può essere assegnato a più negozi nella stessa settimana, ma mai a due negozi nello stesso giorno</li><li>rispetta riposi fissi, domeniche, assenze, 11 ore tra i turni e riposo settimanale</li><li>usa le settimane approvate precedenti solo come continuità, non come vincolo</li></ul></div>'+
     '<div class="actions section"><button class="btn green" onclick="generateWeek()">Genera turni</button></div>');
 }
 function generateWeek(){
@@ -202,9 +202,16 @@ function generateWeek(){
   if(existingWeekShifts.length&&!replace){
     if(!confirm('La settimana '+weekLabel(week)+' contiene già turni. Vuoi sovrascriverli?'))return;
   }
+
+  // La generazione parte da zero nello scope scelto. Le eventuali ore già
+  // presenti negli altri negozi restano però conteggiate nel monte ore del lavoratore.
   const doReplace=replace||existingWeekShifts.length>0;
   if(doReplace){
-    db.shifts=db.shifts.filter(s=>!dates.includes(s.date)||(onlyStore&&s.store!==onlyStore));
+    db.shifts=db.shifts.filter(s=>{
+      if(!dates.includes(s.date))return true;
+      if(onlyStore)return s.store!==onlyStore;
+      return false;
+    });
     if(!onlyStore){
       for(const k of Object.keys(db.shiftWeeks[week]||{}))delete db.shiftWeeks[week][k];
     }else if(db.shiftWeeks[week])delete db.shiftWeeks[week][onlyStore];
@@ -214,111 +221,274 @@ function generateWeek(){
 
   const allWorkers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false);
   const eligible=Object.fromEntries(stores.map(store=>[store,allWorkers.filter(e=>eligibleForStore(e,store))]));
-  const state=Object.fromEntries(allWorkers.map(e=>[String(e.id),{
-    assigned:doReplace?0:db.shifts.filter(s=>String(s.emp)===String(e.id)&&dates.includes(s.date)&&s.type==='Turno').reduce((n,s)=>n+shiftHoursValue(s),0),
-    days:new Set(doReplace?[]:db.shifts.filter(s=>String(s.emp)===String(e.id)&&dates.includes(s.date)).map(s=>s.date)),
-    close:0,open:0
-  }]));
-  let created=0,uncovered=[];
+  const targetOf=e=>Math.max(0,Number(e.ore)||40);
 
-  const canWork=(e,date)=>{
-    const day=new Date(date+'T12:00:00').getDay();
-    if((e.riposiFissi||[]).includes(String(day)))return false;
-    if(approvedAbsence(e.id,date))return false;
-    if(day===0&&!sundayCanWork(e,date))return false;
-    if(state[String(e.id)].days.has(date))return false;
-    if(state[String(e.id)].assigned>=Math.max(0,Number(e.ore)||40)-0.01)return false;
-    return true;
+  const state=Object.fromEntries(allWorkers.map(e=>{
+    const existing=db.shifts.filter(s=>String(s.emp)===String(e.id)&&dates.includes(s.date)&&s.type==='Turno');
+    return [String(e.id),{
+      assigned:existing.reduce((n,s)=>n+shiftHoursValue(s),0),
+      days:new Set(existing.map(s=>s.date)),
+      shifts:new Map(existing.map(s=>[s.date,s])),
+      open:0,close:0,workDays:existing.length,
+      compDay:null
+    }];
+  }));
+
+  const uncovered=[];
+  const warnings=[];
+  let created=0;
+
+  const dayNo=date=>new Date(date+'T12:00:00').getDay();
+  const hourMin=t=>timeMin(t||'00:00');
+  const shiftStart=s=>hourMin(s?.in);
+  const shiftEnd=s=>hourMin(s?.out);
+
+  const approvedOrBlocked=(e,date)=>{
+    const d=dayNo(date);
+    if((e.riposiFissi||[]).includes(String(d)))return true;
+    if(approvedAbsence(e.id,date))return true;
+    if(d===0&&!sundayCanWork(e,date))return true;
+    return false;
   };
-  const addShift=(e,store,date,h,kind)=>{
+
+  const hasAdjacentRest=e=>{
     const st=state[String(e.id)];
-    const remaining=Math.max(0,(Number(e.ore)||40)-st.assigned);
-    const wanted=Math.min(8,remaining);
-    const tm=generatedTimes(e,h,kind,wanted);
-    if(!tm||tm.worked<=0)return false;
-    const x={id:Date.now()+created+Math.floor(Math.random()*1000),emp:e.id,date,store,in:tm.in,out:tm.out,breakStart:tm.breakStart||'',breakEnd:tm.breakEnd||'',type:'Turno',note:'Generato automaticamente · copertura apertura/chiusura · pausa da contratto'};
-    db.shifts.push(x);created++;st.assigned+=tm.worked;st.days.add(date);
-    if(kind==='close')st.close++;if(kind==='open')st.open++;
-    return true;
+    return st.workDays<6;
   };
 
-  // First pass: guarantee opening/closing and minimum daily staffing for every store.
-  for(const date of dates){
-    for(const store of stores){
-      const h=storeDay(store,date);
-      if(!h||h.closed)continue;
-      const minTotal=Math.max(1,Number(h.mtotal)||1);
-      const minOpen=Math.max(0,Number(h.mopen)||0);
-      const minClose=Math.max(0,Number(h.mclose)||0);
-      const dayShifts=()=>db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno');
-      const assignKind=(kind)=>{
-        const list=eligible[store].filter(e=>canWork(e,date)).sort((a,b)=>{
-          const sa=state[String(a.id)],sb=state[String(b.id)];
-          const av=(Number(a.capacitaGenerale)||3),bv=(Number(b.capacitaGenerale)||3);
-          return (kind==='close'?sa.close*3:sa.open*0.5)- (kind==='close'?sb.close*3:sb.open*0.5) || sa.assigned-av*0.05-(sb.assigned-bv*0.05);
-        });
-        for(const e of list)if(addShift(e,store,date,h,kind))return true;
-        return false;
-      };
-      for(let n=0;n<minClose;n++){
-        if(!dayShifts().some(s=>s.out===h.close)&&!assignKind('close'))uncovered.push(store+' '+date+' chiusura');
+  const rest11Ok=(e,date,tm)=>{
+    const st=state[String(e.id)];
+    for(const [d,s] of st.shifts){
+      if(d===date)continue;
+      const delta=Math.round((new Date(d+'T12:00:00')-new Date(date+'T12:00:00'))/86400000);
+      if(Math.abs(delta)!==1)continue;
+      if(delta===-1 && s.out && tm.in){
+        if(hourMin(tm.in)+1440-shiftEnd(s)<660)return false;
       }
-      for(let n=0;n<minOpen;n++){
-        if(!dayShifts().some(s=>s.in===h.open)&&!assignKind('open'))uncovered.push(store+' '+date+' apertura');
-      }
-      while(dayShifts().length<minTotal){
-        if(!assignKind('middle'))break;
+      if(delta===1 && s.in && tm.out){
+        if(hourMin(s.in)+1440-shiftEnd(tm)<660)return false;
       }
     }
+    // Controlla anche il turno precedente/successivo già presente fuori dalla settimana.
+    for(const s of db.shifts.filter(x=>String(x.emp)===String(e.id)&&x.type==='Turno')){
+      const delta=Math.round((new Date(s.date+'T12:00:00')-new Date(date+'T12:00:00'))/86400000);
+      if(Math.abs(delta)!==1)continue;
+      if(delta===-1&&s.out&&tm.in&&hourMin(tm.in)+1440-shiftEnd(s)<660)return false;
+      if(delta===1&&s.in&&tm.out&&hourMin(s.in)+1440-shiftEnd(tm)<660)return false;
+    }
+    return true;
+  };
+
+  const canWork=(e,date)=>{
+    const st=state[String(e.id)];
+    if(approvedOrBlocked(e,date))return false;
+    if(st.days.has(date))return false;
+    if(st.assigned>=targetOf(e)-0.01)return false;
+    if(st.workDays>=6)return false;
+    // Se ha lavorato la domenica, il riposo compensativo viene riservato
+    // su uno dei giorni configurati.
+    if(st.compDay===date)return false;
+    return true;
+  };
+
+  const coverageFor=(store,date)=>{
+    return db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno');
+  };
+
+  const scoreWorker=(e,store,date,kind)=>{
+    const st=state[String(e.id)],target=targetOf(e),remaining=Math.max(0,target-st.assigned);
+    const cp=continuityProfile(e,store,week);
+    const wd=dayNo(date);
+    let score=0;
+    // Priorità forte alla copertura, poi distribuzione delle ore e continuità.
+    score += (st.assigned/Math.max(1,target))*12;
+    score += st.workDays*1.8;
+    score += (kind==='open'?st.open:kind==='close'?st.close:0)*4;
+    if(cp.profile.weekdays.has(wd))score-=4;
+    if(cp.profile.starts.get(wd))score-=2;
+    const sameStart=cp.profile.starts.get(wd);
+    if(sameStart&&kind==='open'&&sameStart===(storeDay(store,date)?.open||''))score-=2;
+    if(sameStart&&kind==='close'&&sameStart!==(storeDay(store,date)?.open||''))score-=1;
+    const team=coverageFor(store,date);
+    const cap=Math.max(1,Number(e.capacitaGenerale)||3);
+    score += team.length/cap;
+    score += Math.max(0,5-remaining)*0.15;
+    // Evita di usare sempre lo stesso lavoratore per aperture/chiusure.
+    if(kind==='open')score+=st.open*2;
+    if(kind==='close')score+=st.close*2;
+    return score;
+  };
+
+  const addShift=(e,store,date,h,kind,forcedHours)=>{
+    const st=state[String(e.id)];
+    const remaining=Math.max(0,targetOf(e)-st.assigned);
+    const wanted=Math.min(8,remaining,forcedHours==null?8:Math.max(0,forcedHours));
+    if(wanted<=0.01)return false;
+    const tm=generatedTimes(e,h,kind,wanted);
+    if(!tm||tm.worked<=0)return false;
+    if(!rest11Ok(e,date,tm))return false;
+    const x={id:Date.now()+created+Math.floor(Math.random()*1000),emp:e.id,date,store,in:tm.in,out:tm.out,breakStart:tm.breakStart||'',breakEnd:tm.breakEnd||'',type:'Turno',note:'Generato automaticamente · copertura '+(kind==='open'?'apertura':kind==='close'?'chiusura':'negozio')+' · pausa da contratto'};
+    db.shifts.push(x);created++;
+    st.assigned+=tm.worked;st.days.add(date);st.shifts.set(date,x);st.workDays++;
+    if(kind==='open')st.open++;
+    if(kind==='close')st.close++;
+    return true;
+  };
+
+  // 1) Calcola il fabbisogno giornaliero. Se apertura+chiusura superano
+  // il minimo giornaliero, il fabbisogno minimo diventa la somma dei due.
+  const requirements=[];
+  for(const date of dates)for(const store of stores){
+    const h=storeDay(store,date);
+    if(!h||h.closed)continue;
+    const minTotal=Math.max(0,Number(h.mtotal)||0);
+    const minOpen=Math.max(0,Number(h.mopen)||0);
+    const minClose=Math.max(0,Number(h.mclose)||0);
+    const required=Math.max(minTotal,minOpen+minClose);
+    requirements.push({date,store,h,minTotal,minOpen,minClose,required});
   }
 
-  // Second pass: complete each employee's contractual weekly hours, globally across stores.
+  // 2) Prima copriamo i buchi strutturali del negozio. Ogni posto di
+  // apertura/chiusura viene assegnato a un lavoratore diverso quando possibile.
+  // Non si scelgono ancora le persone "per fare 40 ore": prima viene coperto il negozio.
+  const assignRequirement=(r,kind)=>{
+    const current=coverageFor(r.store,r.date);
+    const needed=kind==='open'?r.minOpen:kind==='close'?r.minClose:Math.max(0,r.required-current.length);
+    let done=0;
+    while(done<needed){
+      const candidates=eligible[r.store]
+        .filter(e=>canWork(e,r.date))
+        .filter(e=>!coverageFor(r.store,r.date).some(s=>String(s.emp)===String(e.id)))
+        .map(e=>({e,score:scoreWorker(e,r.store,r.date,kind)}))
+        .sort((a,b)=>a.score-b.score);
+      let picked=null;
+      for(const x of candidates){
+        if(addShift(x.e,r.store,r.date,r.h,kind)){picked=x.e;break}
+      }
+      if(!picked)break;
+      done++;
+    }
+    return done;
+  };
+
+  // Aperture e chiusure sono trattate come vincoli duri.
+  for(const r of requirements){
+    const openDone=assignRequirement(r,'open');
+    if(openDone<r.minOpen)uncovered.push(r.store+' '+r.date+' apertura');
+    const closeDone=assignRequirement(r,'close');
+    if(closeDone<r.minClose)uncovered.push(r.store+' '+r.date+' chiusura');
+    while(coverageFor(r.store,r.date).length<r.required){
+      if(assignRequirement(r,'middle')<=0)break;
+    }
+    if(coverageFor(r.store,r.date).length<r.required)uncovered.push(r.store+' '+r.date+' personale minimo');
+  }
+
+  // 3) Completiamo le ore contrattuali. Il lavoratore viene messo dove
+  // serve di più, mantenendo continuità con le settimane già approvate.
+  // Non può fare due negozi nello stesso giorno.
   for(const e of allWorkers){
-    const target=Math.max(0,Number(e.ore)||40);
-    const st=state[String(e.id)];
+    const st=state[String(e.id)],target=targetOf(e);
     let guard=0;
-    while(st.assigned<target-0.01&&guard++<50){
+    while(st.assigned<target-0.01&&guard++<80){
       const candidates=[];
       for(const date of dates){
         if(!canWork(e,date))continue;
         for(const store of stores){
           if(!eligibleForStore(e,store))continue;
           const h=storeDay(store,date);if(!h||h.closed)continue;
+          const team=coverageFor(store,date);
+          const req=requirements.find(r=>r.store===store&&r.date===date);
+          const shortage=req?Math.max(0,req.required-team.length):0;
+          const closeMissing=req&&req.minClose&&!team.some(s=>s.out===h.close);
+          const openMissing=req&&req.minOpen&&!team.some(s=>s.in===h.open);
+          let kind=closeMissing?'close':openMissing?'open':'middle';
           const cp=continuityProfile(e,store,week);
-          const wd=new Date(date+'T12:00:00').getDay();
-          const existing= db.shifts.some(s=>String(s.emp)===String(e.id)&&s.store===store&&s.date===date&&s.type==='Turno');
-          if(existing)continue;
-          const shortage=Math.max(0,(Number(h.mtotal)||1)-db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno').length);
-          const closeShort=db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno').some(s=>s.out===h.close)?0:4;
-          const openShort=db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno').some(s=>s.in===h.open)?0:1;
-          const sameDay=cp.profile.weekdays.has(wd)?0:1.5;
-          const capPenalty=db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno').length/(Number(e.capacitaGenerale)||3);
-          const hoursPenalty=st.assigned/Math.max(1,target);
-          candidates.push({date,store,h,score:-shortage*5-closeShort-openShort+sameDay+capPenalty+hoursPenalty});
+          const wd=dayNo(date);
+          let score=shortage*30+(closeMissing?20:0)+(openMissing?10:0);
+          score-=cp.profile.weekdays.has(wd)?8:0;
+          score-=cp.profile.starts.get(wd)?3:0;
+          score+=(team.length/Math.max(1,Number(e.capacitaGenerale)||3))*2;
+          score+=(st.assigned/Math.max(1,target))*10;
+          score+=st.workDays*1.5;
+          // Preferisce distribuire il monte ore su 5-6 giornate, non creare
+          // 4 ore casuali quando c'è ancora spazio per una giornata piena.
+          const remaining=target-st.assigned;
+          if(remaining>6&&kind!=='middle')score-=2;
+          candidates.push({date,store,h,kind,score,remaining});
         }
       }
       candidates.sort((a,b)=>a.score-b.score||a.date.localeCompare(b.date));
       if(!candidates.length)break;
-      const p=candidates[0];
-      const kind=db.shifts.some(s=>s.store===p.store&&s.date===p.date&&s.type==='Turno'&&s.out===p.h.close)?'open':'close';
-      if(!addShift(e,p.store,p.date,p.h,kind))break;
+      let placed=false;
+      for(const p of candidates){
+        const maxDay=Math.min(8,p.remaining);
+        if(addShift(e,p.store,p.date,p.h,p.kind,maxDay)){placed=true;break}
+      }
+      if(!placed)break;
+    }
+    const delta=Math.round((target-st.assigned)*100)/100;
+    if(delta>0.01)warnings.push((e.nome||'')+' '+(e.cognome||'')+': mancano '+String(delta).replace('.',',')+' h');
+  }
+
+  // 4) Se una domenica è stata assegnata, riserviamo un vero riposo
+  // compensativo tra i giorni configurati. Se il giorno scelto è già lavorato,
+  // spostiamo quel turno su un altro giorno compatibile.
+  for(const e of allWorkers){
+    const st=state[String(e.id)];
+    const sunday=dates.find(d=>dayNo(d)===0&&st.days.has(d));
+    if(!sunday)continue;
+    const options=(e.compensativi||[]).map(String).filter(x=>!((e.riposiFissi||[]).includes(x))).map(Number);
+    if(!options.length)continue;
+    const possible=options.filter(n=>dates[n-1]?true:false).map(n=>dates.find(d=>dayNo(d)===n)).filter(Boolean);
+    let free=possible.find(d=>!st.days.has(d)&&!approvedOrBlocked(e,d));
+    if(free)st.compDay=free;
+    else{
+      // Scegliamo il giorno compensativo con il turno meno "critico".
+      const ranked=possible.filter(d=>st.days.has(d)).sort((a,b)=>{
+        const sa=st.shifts.get(a),sb=st.shifts.get(b);
+        const ra=requirements.find(r=>r.store===sa?.store&&r.date===a);
+        const rb=requirements.find(r=>r.store===sb?.store&&r.date===b);
+        return (ra?.required||0)-(rb?.required||0);
+      });
+      const removeDate=ranked[0];
+      if(removeDate){
+        const old=st.shifts.get(removeDate);
+        db.shifts=db.shifts.filter(s=>s!==old);
+        st.shifts.delete(removeDate);st.days.delete(removeDate);st.workDays--;st.assigned-=shiftHoursValue(old);
+        st.compDay=removeDate;
+        // Tentiamo di rimpiazzare la copertura con un collega.
+        const rr=requirements.find(r=>r.store===old.store&&r.date===old.date);
+        if(rr){
+          const team=coverageFor(rr.store,rr.date);
+          if(team.length<rr.required|| (rr.minClose&& !team.some(s=>s.out===rr.h.close)) || (rr.minOpen&& !team.some(s=>s.in===rr.h.open))){
+            const kind=rr.minClose&&!team.some(s=>s.out===rr.h.close)?'close':rr.minOpen&&!team.some(s=>s.in===rr.h.open)?'open':'middle';
+            const repl=eligible[rr.store].filter(x=>String(x.id)!==String(e.id)&&canWork(x,removeDate)&&!team.some(s=>String(s.emp)===String(x.id))).sort((x,y)=>scoreWorker(x,rr.store,removeDate,kind)-scoreWorker(y,rr.store,removeDate,kind));
+            for(const x of repl)if(addShift(x,rr.store,removeDate,rr.h,kind))break;
+          }
+        }
+      }
     }
   }
 
-  // Third pass: any store still missing the minimum daily staffing/closing gets a clear warning.
-  for(const date of dates)for(const store of stores){
-    const h=storeDay(store,date);if(!h||h.closed)continue;
-    const ds=db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno');
-    if(ds.length<Math.max(1,Number(h.mtotal)||1))uncovered.push(store+' '+date+' personale minimo');
-    if(Number(h.mclose)||0){
-      if(!ds.some(s=>s.out===h.close))uncovered.push(store+' '+date+' chiusura');
-    }
-    if(Number(h.mopen)||0){
-      if(!ds.some(s=>s.in===h.open))uncovered.push(store+' '+date+' apertura');
+  // 5) Verifica finale: niente turni fuori apertura, niente chiusure mancanti,
+  // niente aperture mancanti, niente superamento del contratto e minimo giornaliero.
+  for(const r of requirements){
+    const ds=coverageFor(r.store,r.date);
+    if(ds.length<r.required)uncovered.push(r.store+' '+r.date+' personale minimo');
+    if(r.minClose&&!ds.some(s=>s.out===r.h.close))uncovered.push(r.store+' '+r.date+' chiusura');
+    if(r.minOpen&&!ds.some(s=>s.in===r.h.open))uncovered.push(r.store+' '+r.date+' apertura');
+    for(const s of ds){
+      const h=r.h;
+      if(s.in<h.open||s.out>h.close)warnings.push(r.store+' '+r.date+' turno fuori orario');
+      if(shiftHoursValue(s)>8.01)warnings.push(r.store+' '+r.date+' oltre 8h '+empName(s.emp));
     }
   }
+  for(const e of allWorkers){
+    const st=state[String(e.id)];
+    if(st.assigned>targetOf(e)+0.01)warnings.push((e.nome||'')+' '+(e.cognome||'')+': oltre contratto');
+  }
 
-  // Courses are added only when the worker has no shift/absence that day.
+  // 6) Corsi: non sovrascrivono mai un turno o un'assenza.
   for(const e of allWorkers)for(const date of dates){
     const co=courseOnDate(e.id,date);
     if(!co||employeeHasDay(e,date))continue;
@@ -326,9 +496,16 @@ function generateWeek(){
     if(store)db.shifts.push({id:Date.now()+created,emp:e.id,date,store,in:'',out:'',breakStart:'',breakEnd:'',type:'Corso',note:co.titolo||'Corso'}),created++;
   }
 
-  audit('Turni','Generata settimana '+week+' · '+created+' elementi · ore contrattuali globali, pause contratto, riposi, apertura/chiusura e multi-negozio');
+  const msg='Generata '+weekLabel(week)+' · '+created+' elementi · copertura negozi, ore contrattuali, pause, riposi e continuità.';
+  audit('Turni',msg);
   save();closeModal();render();
-  alert(uncovered.length?'Settimana generata. Attenzione: non è stato possibile coprire completamente: '+uncovered.slice(0,8).join(', ')+(uncovered.length>8?' …':''):'Settimana generata correttamente: ore contrattuali, pause, riposi e copertura apertura/chiusura rispettati.');
+  if(uncovered.length||warnings.length){
+    alert('Settimana generata con segnalazioni.\n\n'+
+      (uncovered.length?'Coperture da verificare: '+uncovered.slice(0,10).join(', ')+(uncovered.length>10?' …':'')+'\n':'')+
+      (warnings.length?'Altre segnalazioni: '+warnings.slice(0,10).join(', ')+(warnings.length>10?' …':''):''));
+  }else{
+    alert('Settimana generata correttamente: copertura apertura/chiusura, ore contrattuali, pause e riposi verificati.');
+  }
 }
 function sendWeekToDirectors(week){if(user.ruolo!==3)return;for(const s of shiftStores())weekStoreState(week,s).status='inviato_direttore';db.notifications=db.notifications||[];for(const e of db.employees.filter(x=>x.ruolo===2))db.notifications.push({id:Date.now()+Math.random(),emp:e.id,date:new Date().toISOString(),read:false,text:'Turni '+weekLabel(week)+' inviati per il controllo del tuo negozio.'});audit('Turni','Invio settimana '+week+' ai Direttori');save();render()}
 function approveStoreWeek(week,store){if(user.ruolo!==2||String(store)!==String(user.negozio)||weekStoreStatus(week,store)!=='inviato_direttore')return;if(!confirm('Approvare i turni del tuo negozio per '+weekLabel(week)+'?'))return;weekStoreState(week,store).status='approvata_direttore';audit('Turni','Approvazione Direttore '+store+' · '+week);save();render()}
