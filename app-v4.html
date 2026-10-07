@@ -240,11 +240,9 @@ function excelCellValue(row,day){
   for(const p of priority)if(vals.some(v=>excelNorm(v)===excelNorm(p)))return p;
   return vals[0];
 }
-function excelImportPlan(rows,fileName){
-  const title=rows.find(r=>excelNorm(r[0]).startsWith('settimana n.'));
-  const m=title&&String(title[0]).match(/(\\d{1,2})/);
-  const weekNo=m?Number(m[1]):null;
-  if(!weekNo||weekNo<1||weekNo>53)throw new Error('Numero settimana non trovato nel file.');
+function excelImportPlan(rows,fileName,weekNo){
+  weekNo=Number(weekNo);
+  if(!weekNo||weekNo<1||weekNo>53)throw new Error('Numero settimana non valido. Inserisci un valore da 1 a 53.');
   const year=new Date().getFullYear(),week=excelWeekStart(weekNo,year),dates=shiftWeekDates(week);
   const storesByNorm=new Map(STORES.flatMap(s=>[[excelNorm(s[0]),s[0]],[excelNorm(s[1]),s[0]]]));
   let currentStore='',currentStoreLabel='',headerFound=false;
@@ -302,12 +300,19 @@ function importWeekExcelModal(){
 function readExcelWeek(input){
   const file=input&&input.files&&input.files[0];if(!file)return;
   if(typeof XLSX==='undefined'){alert('Lettore Excel non disponibile. Controlla la connessione e riprova.');return}
+  let weekNo=prompt('Numero settimana (1–53):');
+  if(weekNo===null)return;
+  weekNo=String(weekNo).trim();
+  if(!/^[0-9]{1,2}$/.test(weekNo)||Number(weekNo)<1||Number(weekNo)>53){
+    alert('Numero settimana non valido. Inserisci un numero da 1 a 53.');
+    input.value='';return;
+  }
   file.arrayBuffer().then(buf=>{
     try{
       const book=XLSX.read(buf,{type:'array',cellDates:true});
       const sheet=book.Sheets[book.SheetNames[0]];
       const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
-      window._excelImportPlan=excelImportPlan(rows,file.name);
+      window._excelImportPlan=excelImportPlan(rows,file.name,Number(weekNo));
       renderExcelImportPreview(window._excelImportPlan);
     }catch(e){window._excelImportPlan=null;alert('Import Excel non riuscito: '+(e&&e.message||e))}
   }).catch(e=>alert('Impossibile leggere il file Excel: '+(e&&e.message||e)));
