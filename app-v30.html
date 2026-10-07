@@ -1,0 +1,1045 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#c62828"><title>B+ Gestionale HR</title><style>:root{--bg:#101114;--p:#191b20;--line:#30343b;--txt:#f5f6f8;--muted:#9da3ad;--red:#c62828;--green:#2e9b58;--gold:#8a6410}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font:14px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}button,input,select{font:inherit}button{min-height:44px;cursor:pointer}.side{position:fixed;left:0;top:0;bottom:0;width:250px;background:#15171a;border-right:1px solid var(--line);padding:16px;z-index:20}.brand{text-align:center;margin-bottom:14px}.simple-logo{display:flex;align-items:center;justify-content:center;width:82px;height:82px;margin:0 auto 10px;background:#e30613;color:#ffe900;border-radius:10px;font-size:38px;font-weight:900;line-height:1;letter-spacing:-4px;font-style:normal}.brand span{display:block;text-align:center}.brand i{color:#e53935;font-style:normal}.who,.card{background:var(--p);border:1px solid var(--line);border-radius:14px;padding:14px}.who{margin-bottom:14px}.nav{display:grid;gap:5px}.nav button{border:0;background:transparent;color:#c8ccd2;text-align:left;border-radius:9px;padding:11px}.nav button.active,.nav button:hover{background:#292d33;color:#fff}.main{margin-left:250px;padding:20px 24px 90px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:18px}.top h1{margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--red);color:#fff;font-weight:750}.secondary{background:#363a40}.green{background:var(--green)}.danger{background:#6e2020}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.section{margin-top:15px}.muted{color:var(--muted);font-size:13px}.stat{font-size:28px;font-weight:900;margin-top:5px}.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}.table{width:100%;border-collapse:collapse;min-width:850px}.table th,.table td{padding:9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}.table th{font-size:12px;color:#a5aab3}.tabs{display:flex;gap:6px;overflow:auto;margin-bottom:12px}.tabs button{border:1px solid var(--line);background:var(--p);color:#bbb;border-radius:9px;padding:8px 12px}.tabs button.active{background:#30343a;color:#fff}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:center;justify-content:center;padding:16px}.modal.open{display:flex}.dialog{width:min(950px,100%);max-height:92vh;overflow:auto;background:#1a1c20;border:1px solid #3b3f46;border-radius:16px;padding:16px}.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.form label{display:grid;gap:5px;color:#b5bac2;font-size:12px}.form input,.form select,.form textarea{background:#292d33;color:#fff;border:1px solid #454a52;border-radius:8px;padding:10px}.checks{display:flex;flex-wrap:wrap;gap:8px}.checks label{background:#25282d;padding:8px;border-radius:8px}.matrix{overflow:auto}.matrix table{border-collapse:collapse;min-width:950px}.matrix th,.matrix td{border:1px solid var(--line);padding:7px;text-align:center;white-space:nowrap}.matrix th:first-child,.matrix td:first-child{position:sticky;left:0;background:#191b20;text-align:left}.worked{background:var(--gold);font-weight:800}.bottom{display:none}.hidden{display:none}@media(max-width:800px){.side{transform:translateX(-105%);transition:.2s;width:285px}.side.open{transform:none}.main{margin:0;padding:14px 12px 90px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bottom{display:grid;position:fixed;bottom:0;left:0;right:0;grid-template-columns:repeat(5,1fr);background:#15171a;border-top:1px solid var(--line);z-index:25;padding-bottom:env(safe-area-inset-bottom)}.bottom button{border:0;background:transparent;color:#aaa;font-size:10px}.bottom b{display:block;font-size:18px}.form{grid-template-columns:1fr}.modal{align-items:flex-end;padding:0}.dialog{width:100%;border-radius:18px 18px 0 0}.grid{gap:8px}}@media(max-width:460px){.grid{grid-template-columns:1fr}}</style><style>
+.shift-plan{background:#fff;color:#111;border:1px solid #c4c4c4;padding:0;border-radius:4px;overflow:hidden}
+.sp-title{background:#a9c9e8;color:#111;text-align:center;font-weight:800;font-style:italic;padding:7px 10px;border-bottom:2px solid #111;letter-spacing:.3px}
+.sp-title span{font-weight:800;margin-left:5px}
+.sp-table{width:100%;min-width:1250px;border-collapse:collapse;font-family:Arial,sans-serif;font-size:11px;table-layout:fixed}
+.sp-table th,.sp-table td{border:1px solid #777;padding:2px 3px;height:29px;vertical-align:middle;text-align:center}
+.sp-table thead th{background:#f4dc92;color:#111;font-weight:800}
+.sp-h1{width:120px}.sp-h2{width:245px}.sp-h3{width:88px}.sp-h4{width:72px}.sp-h5{width:55px}
+.sp-date{width:92px;padding:0!important}.sp-date b{display:block;width:100%;padding:4px 0 1px;font-style:italic;text-transform:lowercase}.sp-date span{display:block;width:100%;padding:1px 0 3px}.sp-date small{display:block;border-top:1px solid #777;padding:2px 0;font-size:9px}
+.sp-contract{background:#eef6ff!important;color:#17385f;font-size:14px;font-weight:900}.sp-prev{background:#a9c9e8!important}.sp-hours{font-weight:900;background:#fff3c4}.sp-balance{font-weight:900;background:#fff3c4}.sp-balance.neg{color:#fff;background:#e53935!important;border-radius:10px;padding:2px 7px}.sp-balance.pos{color:#fff;background:#18a957!important;border-radius:10px;padding:2px 7px}
+.sp-note{text-align:left!important;color:#17385f;background:#f4f8fc;font-weight:800;padding:5px 8px!important}.sp-note-sub{font-weight:400;font-size:9px;color:#666;margin-top:2px}
+.sp-worker-name{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}.sp-worker-main{display:flex;align-items:center;gap:7px;min-width:150px}.sp-worker-icon{font-size:15px;color:#174a82}.sp-worker-totals{display:inline-flex;align-items:center;gap:7px;margin-left:auto;font-size:10px;font-weight:700;color:#333}.sp-worker-totals>span{display:inline-flex;align-items:center;gap:3px;white-space:nowrap}.sp-worker-totals .sp-balance{font-size:10px}.sp-actions{display:flex;gap:6px;justify-content:flex-end;align-items:center}.sp-actions .btn{padding:5px 9px;font-size:11px}
+.sp-day{padding:0!important;background:#fff;cursor:pointer}.sp-day:hover{background:#f4f4f4}.sp-closed{background:#666!important;cursor:default}
+.sp-times{display:grid;grid-template-columns:repeat(4,1fr);min-height:28px}.sp-times span{display:flex;align-items:center;justify-content:center;border-right:1px solid #999;font-size:10px;font-style:italic}.sp-times span:last-child{border-right:0}.sp-special{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-style:italic}.sp-rest{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;background:#eef2f6;color:#273746;border:1px solid #cbd5df;border-radius:4px;cursor:pointer}.sp-rest.comp{background:#fff2d8;color:#8a5a00;border-color:#e5c477}.sp-presence{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9px;background:#e9eef5;color:#17385f}.sp-mobility{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:10px;background:#d9e9ff;color:#174a82;font-size:9px;font-weight:800}.sp-empty{padding:14px!important;color:#666;background:#f7f7f7}.sp-cross-store{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9px;background:#e7f0fb;color:#174a82}.sp-conflict{background:#ffe1e1!important;color:#9b1c1c!important}.pr-cell{padding:5px!important}.pr-cell-tools{display:flex;gap:4px;align-items:center;justify-content:center}.pr-cell select{min-width:115px;background:#292d33;color:#fff;border:1px solid #454a52;border-radius:7px;padding:7px}.pr-move-btn{min-height:34px!important;padding:5px 8px;border:1px solid #4c80b5;background:#d9e9ff;color:#174a82;border-radius:7px;font-weight:900}.pr-status{min-height:14px;margin-top:3px;font-size:9px;font-weight:800;color:#174a82}
+@media(max-width:900px){.sp-table{min-width:1100px}.sp-date{width:86px}.sp-note{width:125px}}
+</style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body><aside id="side" class="side"><div class="brand"><div class="simple-logo" aria-label="B+">B+</div><span>B+ Gestionale HR</span></div><div id="who" class="who"></div><nav id="nav" class="nav"></nav></aside><main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">Versione HR completa</div></div><div class="actions"><button class="btn secondary" onclick="toggleMenu()">☰</button><button class="btn" onclick="logout()">Esci</button></div></header><section id="view"></section></main><nav id="bottom" class="bottom"></nav><div id="modal" class="modal"><div class="dialog"><div class="top"><h2 id="mtitle"></h2><button class="btn secondary" onclick="closeModal()">Chiudi</button></div><div id="mbody"></div></div></div><script>
+window.addEventListener('error',function(e){
+  var box=document.getElementById('fatalError');
+  if(!box){
+    box=document.createElement('div');box.id='fatalError';
+    box.style='position:fixed;inset:12px;z-index:99999;background:#240b0b;color:#fff;border:2px solid #c62828;border-radius:12px;padding:18px;font:14px monospace;white-space:pre-wrap;overflow:auto';
+    document.body.appendChild(box);
+  }
+  box.textContent='Errore avvio B+ Gestionale\\n'+(e.message||'Errore JavaScript')+'\\n'+(e.filename||'')+':'+(e.lineno||'');
+});
+window.addEventListener('unhandledrejection',function(e){throw e.reason||new Error('Errore non gestito')});
+</script><script src="./auth-v3.js?build=20261002-login-v3"></script><script>
+'use strict';
+const auth=BPlusAuth.get();
+if(!auth||!auth.uid||!auth.user){location.replace('./index.html?login=required');throw new Error('login required')}
+const user=auth.user;const roles=['','Lavoratore','Direttore','Titolare'];const DAYS=['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];const STORES=[['GAG','Gaggiolo'],['COC','Cocquio'],['DAV','Daverio'],['VAR','Varese']];const KEY='bplus_new_v4';
+const defaults={employees:[],absences:[],shifts:[],notifications:[],stores:STORES.map(([id,name])=>({id,name,days:{},exceptions:{}})),courses:[]};let db=JSON.parse(localStorage.getItem(KEY)||'null')||{};for(const k of Object.keys(defaults)){if(Array.isArray(defaults[k])){if(!Array.isArray(db[k]))db[k]=defaults[k]}else if(!db[k])db[k]=defaults[k]}if(!Array.isArray(db.employees))db.employees=[];if(!Array.isArray(db.absences))db.absences=[];if(!Array.isArray(db.shifts))db.shifts=[];if(!Array.isArray(db.notifications))db.notifications=[];if(!Array.isArray(db.courses))db.courses=[];if(!Array.isArray(db.stores))db.stores=defaults.stores;for(const e of db.employees){if(typeof e.oreRecuperoBase!=='number')e.oreRecuperoBase=0}if(!Array.isArray(db.attendance))db.attendance=[];if(!Array.isArray(db.board))db.board=[];if(!Array.isArray(db.audit))db.audit=[];if(!Array.isArray(db.calendarEvents))db.calendarEvents=[];if(!db.shiftWeeks||typeof db.shiftWeeks!=='object')db.shiftWeeks={};save();let page='dashboard';
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function today(){return new Date().toISOString().slice(0,10)}function toggleMenu(){side.classList.toggle('open')}function logout(){BPlusAuth.clear();location.replace('./index.html?logout=1')}function openModal(t,h){mtitle.textContent=t;mbody.innerHTML=h;modal.classList.add('open')}function closeModal(){modal.classList.remove('open')}
+const P={dashboard:'Dashboard',employees:'Dipendenti',shifts:'Turni',history:'Storico turni',calendar:'Calendario HR',absences:'Ferie & Permessi',stores:'Punti vendita',courses:'Corsi',board:'Bacheca',reports:'Report',notifications:'Notifiche',audit:'Audit log',backup:'Backup & Sincronizzazione',profile:'Profilo'};function allowed(p){if(user.ruolo===3)return true;if(user.ruolo===2)return ['dashboard','employees','shifts','history','calendar','absences','courses','board','reports','notifications','profile'].includes(p);return ['dashboard','calendar','absences','courses','board','notifications','profile'].includes(p)}function go(p){if(!allowed(p))return;page=p;side.classList.remove('open');title.textContent=P[p];buildNav();render()}
+function buildNav(){nav.innerHTML=Object.entries(P).filter(([p])=>allowed(p)).map(([p,n])=>`<button class="${page===p?'active':''}" onclick="go('${p}')">${n}</button>`).join('');bottom.innerHTML=[['dashboard','⌂'],['calendar','📅'],['notifications','🔔'],['menu','☰']].map(([p,i])=>`<button onclick="${p==='menu'?'toggleMenu()':`go('${p}')`}"><b>${i}</b>${p==='menu'?'Menu':P[p]}</button>`).join('');who.innerHTML=`<b>${esc(user.nome||'Utente')} ${esc(user.cognome||'')}</b><div class="muted">${roles[user.ruolo]||''}${user.negozio?' · '+esc(user.negozio):''}</div>`}
+function dashboard(){return `<div class="grid"><div class="card"><div class="muted">Dipendenti</div><div class="stat">${db.employees.length}</div></div><div class="card"><div class="muted">Turni</div><div class="stat">${db.shifts.length}</div></div><div class="card"><div class="muted">Assenze</div><div class="stat">${db.absences.length}</div></div><div class="card"><div class="muted">Notifiche</div><div class="stat">${db.notifications.filter(n=>!n.read&&(n.emp==="all"||String(n.emp)===String(user.id))).length}</div></div></div><div class="section grid">${STORES.map(s=>`<div class="card"><b>${s[1]}</b><div class="muted">Configurazione punto vendita</div><button class="btn section" onclick="go('stores')">Apri</button></div>`).join('')}</div>`}
+function employees(){if(user.ruolo!==3)return '<div class="card">Accesso non disponibile.</div>';return `<div class="actions"><button class="btn" onclick="employeeModal()">+ Nuovo lavoratore</button></div><div class="section tablewrap"><table class="table"><tr><th>Nome</th><th>Email</th><th>Ruolo</th><th>Negozio</th><th>Stato</th><th></th></tr>${db.employees.map(e=>`<tr><td>${esc(e.nome)} ${esc(e.cognome)}</td><td>${esc(e.email)}</td><td>${roles[e.ruolo]}</td><td>${esc(e.negozio)}</td><td>${esc(e.stato)}</td><td><div class="sp-actions"><button class="btn secondary" onclick="employeeModal(${e.id})">Apri</button><button class="btn danger" onclick="deleteEmployee(${e.id})" title="Elimina lavoratore e dati collegati">Elimina</button></div></td></tr>`).join('')}</table></div>`}
+function deleteEmployee(id){if(user.ruolo!==3)return;const e=db.employees.find(x=>String(x.id)===String(id));if(!e)return;if(String(e.id)===String(user.id)){alert('Non puoi eliminare il tuo stesso account.');return}const nome=(e.nome+' '+e.cognome).trim()||e.email||'questo lavoratore';if(!confirm('Eliminare definitivamente '+nome+'?\n\nVerranno eliminati anche turni, assenze, corsi, presenze e notifiche collegati al lavoratore.'))return;const idv=String(id);db.employees=db.employees.filter(x=>String(x.id)!==idv);db.shifts=db.shifts.filter(x=>String(x.emp)!==idv);db.absences=db.absences.filter(x=>String(x.emp)!==idv);db.courses=db.courses.filter(x=>String(x.emp)!==idv);db.attendance=db.attendance.filter(x=>String(x.emp)!==idv);db.notifications=db.notifications.filter(x=>String(x.emp)!==idv);save();render()}
+function employeeModal(id){let e=id?db.employees.find(x=>x.id==id):{id:Date.now(),nome:'',cognome:'',email:'',telefono:'',ruolo:1,negozio:'GAG',stato:'attivo',inTurni:true,contratto:'indeterminato',ore:40,capacitaGenerale:3,policyDomeniche:'ogni2',pausaTipo:'flessibile',pausaInizio:'12:00',pausaFine:'13:30',pausaMin:60,riposiFissi:[],compensativi:[],mobilita:[]};window._emp=e;openModal('Scheda lavoratore',`<div class="tabs"><button class="active" onclick="empTab('an')">Anagrafica</button><button onclick="empTab('ct')">Contratto & Turni</button><button onclick="empTab('as')">Assenze</button></div><div id="etab"></div>`);empTab('an')}
+function shiftHoursValue(s){if(!s||s.type!=='Turno'||!s.in||!s.out)return 0;const m=t=>{const q=String(t).split(':').map(Number);return q[0]*60+q[1]};let total=Math.max(0,m(s.out)-m(s.in));if(s.breakStart&&s.breakEnd)total-=Math.max(0,m(s.breakEnd)-m(s.breakStart));return Math.max(0,total)/60}
+function approvedFerieDays(emp,week){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));if(!e)return 0;const ds=shiftWeekDates(week);return ds.filter(d=>db.absences.some(a=>String(a.emp)===String(e.id)&&a.tipo==='Ferie'&&a.stato==='approvato'&&d>=a.da&&d<=a.a)).length}
+function ferieHoursForWeek(emp,week){return approvedFerieDays(emp,week)*9}
+function courseHoursForWeek(emp,week,store){
+  const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));
+  if(!e)return 0;
+  const ds=shiftWeekDates(week);
+  return Math.round(db.courses.filter(c=>{
+    if(String(c.emp)!==String(e.id)||!ds.includes(c.data))return false;
+    if(!['programmato','in corso','completato'].includes(c.stato))return false;
+    if(!store)return true;
+    const cs=db.shifts.find(s=>String(s.emp)===String(e.id)&&s.date===c.data&&s.type==='Corso');
+    return cs?cs.store===store:store===e.negozio;
+  }).reduce((n,c)=>n+(Number(c.durata)||0),0)*100)/100;
+}
+function weekTotalHours(emp,week,store){
+  const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));
+  if(!e)return 0;
+  const ds=shiftWeekDates(week);
+  const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&ds.includes(s.date)&&s.type==='Turno'&&(!store||s.store===store)).reduce((n,s)=>n+shiftHoursValue(s),0);
+  const ferie=ferieHoursForWeek(e,week);
+  const corso=courseHoursForWeek(e,week,store);
+  return Math.round((worked+ferie+corso)*100)/100
+}
+function fullWeekFerie(emp,week){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));return !!e&&approvedFerieDays(e,week)===7}
+function recoveryAuto(emp){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));if(!e)return 0;const now=shiftWeekKey(todayDate());const weeks=new Set(db.shifts.filter(s=>String(s.emp)===String(e.id)&&s.date<=todayDate()).map(s=>shiftWeekKey(s.date)));for(const a of db.absences.filter(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.tipo==='Ferie')){weeks.add(shiftWeekKey(a.da));weeks.add(shiftWeekKey(a.a))}weeks.add(now);let total=0;for(const w of weeks){if(fullWeekFerie(e,w))continue;const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&shiftWeekKey(s.date)===w).reduce((n,s)=>n+shiftHoursValue(s),0);const ferie=ferieHoursForWeek(e,w);const corso=courseHoursForWeek(e,w);const hasActivity=worked>0||ferie>0||corso>0||db.absences.some(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.da<=shiftWeekDates(w)[6]&&a.a>=shiftWeekDates(w)[0]);if(!hasActivity)continue;total+=(Number(e.ore)||40)-(worked+ferie+corso)}return Math.round(total*100)/100}
+function recoveryBalance(emp){const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));return e?Math.round(((Number(e.oreRecuperoBase)||0)+recoveryAuto(e))*100)/100:0}
+function recoveryLabel(emp){const n=recoveryBalance(emp);return (n>0?'+':'')+String(n).replace('.',',')+' h'}function empTab(t){
+  let e=window._emp;
+  if(t==='an'){
+    etab.innerHTML='<div class="form"><label>Nome<input id="en" value="'+esc(e.nome)+'"></label><label>Cognome<input id="ec" value="'+esc(e.cognome)+'"></label><label>Email<input id="ee" value="'+esc(e.email)+'"></label><label>Telefono<input id="ephone" value="'+esc(e.telefono)+'"></label><label>Ruolo<select id="er">'+[1,2,3].map(r=>'<option value="'+r+'" '+(e.ruolo==r?'selected':'')+'>'+roles[r]+'</option>').join('')+'</select></label><label>Negozio<select id="estore">'+STORES.map(s=>'<option value="'+s[0]+'" '+(e.negozio===s[0]?'selected':'')+'>'+s[1]+'</option>').join('')+'</select></label><label>Stato<select id="estate">'+['attivo','assente','ferie','malattia'].map(x=>'<option '+(e.stato===x?'selected':'')+'>'+x+'</option>').join('')+'</select></label><label>Includi nei turni<input id="eit" type="checkbox" '+(e.inTurni?'checked':'')+'></label></div><button class="btn green section" onclick="saveEmployee()">Salva anagrafica</button>';
+  }else if(t==='ct'){
+    const cap=user.ruolo===3?'<label>Capacità generale<select id="generalCapacity">'+[1,2,3,4,5].map(x=>'<option value="'+x+'" '+(Number(e.capacitaGenerale||3)===x?'selected':'')+'>'+x+'</option>').join('')+'</select><span class="muted">Da 1 a 5. Usata per bilanciare la composizione delle squadre nella generazione automatica dei turni.</span></label>':'';
+    etab.innerHTML='<div class="form"><label>Contratto<select id="contract"><option '+(e.contratto==='indeterminato'?'selected':'')+'>indeterminato</option><option '+(e.contratto==='determinato'?'selected':'')+'>determinato</option><option '+(e.contratto==='part-time'?'selected':'')+'>part-time</option></select></label><label>Ore settimanali<input id="hours" type="number" value="'+(e.ore||40)+'"></label>'+cap+'<label>Ore da recuperare<input id="recoveryHours" type="number" step="0.25" value="'+recoveryBalance(e)+'" '+(user.ruolo===3?'':'readonly')+'><span class="muted">Si aggiorna automaticamente in base ai turni. Il Titolare può correggerlo.</span></label><label>Policy domeniche<select id="sunPolicy"><option value="ogni2" '+(e.policyDomeniche==='ogni2'?'selected':'')+'>1 ogni 2</option><option value="ogni3" '+(e.policyDomeniche==='ogni3'?'selected':'')+'>1 ogni 3</option><option value="tutte" '+(e.policyDomeniche==='tutte'?'selected':'')+'>Tutte</option><option value="nessuna" '+(e.policyDomeniche==='nessuna'?'selected':'')+'>Nessuna</option></select></label><label>Tipo di pausa<select id="pauseType" onchange="pauseFields()"><option value="fissa" '+(e.pausaTipo==='fissa'?'selected':'')+'>Fissa</option><option value="flessibile" '+(e.pausaTipo!=='fissa'?'selected':'')+'>Flessibile</option></select></label><label id="fixedPause">Orario pausa (es. 12:00 / 13:30)<input id="pauseTime" value="'+esc((e.pausaInizio||'12:00')+' / '+(e.pausaFine||'13:30'))+'"></label><label id="flexPause">Durata pausa (minuti)<input id="pauseMin" type="number" value="'+(e.pausaMin||60)+'"></label></div><h3>Riposo fisso settimanale</h3><div class="checks">'+DAYS.map((d,i)=>'<label><input class="rf" type="checkbox" value="'+i+'" '+((e.riposiFissi||[]).includes(String(i))?'checked':'')+'>'+d+'</label>').join('')+'</div><h3>Riposo compensativo se lavora la domenica</h3><div class="muted">Giorni possibili della stessa settimana; vengono esclusi i giorni di riposo fisso.</div><div class="checks">'+DAYS.slice(0,6).map((d,i)=>'<label><input class="rc" type="checkbox" value="'+i+'" '+((e.compensativi||[]).includes(String(i))?'checked':'')+'>'+d+'</label>').join('')+'</div><h3>Mobilità</h3><div class="checks">'+STORES.map(s=>'<label><input class="mob" type="checkbox" value="'+s[0]+'" '+((e.mobilita||[]).includes(s[0])?'checked':'')+'>'+s[1]+'</label>').join('')+'</div><button class="btn green section" onclick="saveContract()">Salva Contratto & Turni</button>';
+  }else{
+    etab.innerHTML='<button class="btn" onclick="absenceModal('+e.id+')">+ Inserisci assenza</button><div class="section tablewrap"><table class="table"><tr><th>Tipo</th><th>Dal</th><th>Al</th><th>Stato</th></tr>'+db.absences.filter(a=>String(a.emp)===String(e.id)).map(a=>'<tr><td>'+a.tipo+'</td><td>'+a.da+'</td><td>'+a.a+'</td><td>'+a.stato+'</td></tr>').join('')+'</table></div>';
+  }
+  if(t==='ct')pauseFields();
+}
+function pauseFields(){let fixed=document.getElementById('pauseType').value==='fissa';document.getElementById('fixedPause').style.display=fixed?'grid':'none';document.getElementById('flexPause').style.display=fixed?'none':'grid'}
+function saveEmployee(){let e=_emp;e.nome=en.value.trim();e.cognome=ec.value.trim();e.email=ee.value.trim();e.telefono=ephone.value.trim();e.ruolo=+er.value;e.negozio=estore.value;e.stato=estate.value;e.inTurni=eit.checked;upsertEmployee(e)}function saveContract(){let e=_emp;const autoBefore=recoveryAuto(e);if(user.ruolo===3&&document.getElementById('recoveryHours'))e.oreRecuperoBase=(+recoveryHours.value||0)-autoBefore;e.contratto=contract.value;e.ore=+hours.value;if(user.ruolo===3&&document.getElementById('generalCapacity'))e.capacitaGenerale=+generalCapacity.value||3;e.policyDomeniche=sunPolicy.value;e.pausaTipo=pauseType.value;if(e.pausaTipo==='fissa'){let x=pauseTime.value.split('/').map(s=>s.trim());e.pausaInizio=x[0]||'12:00';e.pausaFine=x[1]||'13:30'}else e.pausaMin=+pauseMin.value;e.riposiFissi=[...document.querySelectorAll('.rf:checked')].map(x=>x.value);e.compensativi=[...document.querySelectorAll('.rc:checked')].map(x=>x.value).filter(x=>!e.riposiFissi.includes(x));e.mobilita=[...document.querySelectorAll('.mob:checked')].map(x=>x.value);upsertEmployee(e)}function upsertEmployee(e){let i=db.employees.findIndex(x=>x.id==e.id);if(i<0)db.employees.push(e);else db.employees[i]=e;save();closeModal();render()}
+function absenceModal(emp){openModal('Nuova assenza',`<div class="form"><label>Tipo<select id="atype"><option>Ferie</option><option>Permesso</option><option>Malattia</option><option>Corso</option></select></label><label>Dal<input id="afrom" type="date" value="${today()}"></label><label>Al<input id="ato" type="date" value="${today()}"></label><label>Note<input id="anote"></label></div><button class="btn green section" onclick="saveAbs(${emp})">Salva</button>`)}function saveAbs(emp){db.absences.push({id:Date.now(),emp,tipo:atype.value,da:afrom.value,a:ato.value,note:anote.value,stato:user.ruolo>=2?'approvato':'in_attesa'});db.notifications.unshift({id:Date.now(),emp,text:'È stata inserita una nuova assenza',read:false,date:new Date().toISOString()});save();closeModal();render()}
+function absences(){let selected=document.getElementById('filterEmp')?.value||'',type=document.getElementById('filterType')?.value||'',status=document.getElementById('filterStatus')?.value||'';let list=db.absences.filter(a=>(user.ruolo!==1||String(a.emp)===String(user.id))&&(!selected||String(a.emp)===selected)&&(!type||a.tipo===type)&&(!status||a.stato===status));return `<div class="actions"><select id="filterEmp" onchange="render()"><option value="">Tutti i lavoratori</option>${db.employees.map(e=>`<option value="${e.id}" ${String(selected)===String(e.id)?'selected':''}>${esc(e.nome)} ${esc(e.cognome)}</option>`).join('')}</select><select id="filterType" onchange="render()"><option value="">Tutti i tipi</option>${['Ferie','Permesso','Malattia','Corso'].map(x=>`<option ${type===x?'selected':''}>${x}</option>`).join('')}</select><select id="filterStatus" onchange="render()"><option value="">Tutti gli stati</option>${['in_attesa','approvato','rifiutato'].map(x=>`<option ${status===x?'selected':''}>${x}</option>`).join('')}</select>${user.ruolo===1?`<button class="btn" onclick="absenceModal(${user.id})">+ Richiedi</button>`:''}</div><div class="section tablewrap"><table class="table"><tr><th>Lavoratore</th><th>Tipo</th><th>Dal</th><th>Al</th><th>Stato</th><th></th></tr>${list.map(a=>{let e=db.employees.find(x=>x.id==a.emp);return `<tr><td>${e?esc(e.nome+' '+e.cognome):a.emp}</td><td>${a.tipo}</td><td>${a.da}</td><td>${a.a}</td><td>${a.stato}</td><td>${user.ruolo>=2&&a.stato==='in_attesa'?`<button class="btn green" onclick="answerAbs(${a.id},'approvato')">Approva</button> <button class="btn danger" onclick="answerAbs(${a.id},'rifiutato')">Rifiuta</button>`:''}</td></tr>`}).join('')}</table></div>`}function answerAbs(id,status){let a=db.absences.find(x=>x.id==id);if(a){a.stato=status;db.notifications.unshift({id:Date.now(),emp:a.emp,text:'La tua richiesta di assenza è stata '+(status==='approvato'?'approvata':'rifiutata'),read:false,date:new Date().toISOString()});save();render()}}
+function storeModal(id,key){let s=db.stores.find(x=>x.id===id);if(!s)return;const isWeekly=/^weekly-\d$/.test(String(key||''));const dayKey=isWeekly?key:'';const actual=isWeekly?'':(key||'');const dLabel=isWeekly?DAYS[Number(key.split('-')[1])]:actual;let v=(isWeekly?s.days[dayKey]:actual?s.exceptions[actual]:null)||{closed:false,mode:'continuato',open:'08:30',close:'20:00',mtotal:1,mopen:1,mclose:1,mpause:0,lunch1:'12:30',lunch2:'14:30'};openModal(s.name+' — '+(dLabel||'Orario standard'),`<div class="form"><label>Giorno standard<input value="${dLabel||'—'}" readonly></label><label>Data specifica (opzionale)<input id="sdate" type="date" value="${actual}"></label><label>Festivo / chiuso<input id="sclosed" type="checkbox" ${v.closed?'checked':''}></label><label>Dalle<input id="sopen" type="time" value="${v.open||'08:30'}"></label><label>Alle<input id="sclose" type="time" value="${v.close||'20:00'}"></label><label style="display:flex;align-items:center;gap:8px;background:#25282d;padding:10px;border-radius:8px"><input id="ssplit" type="checkbox" ${v.mode==='spezzato'?'checked':''} onchange="splitFields()"> Orario spezzato</label><div id="splitFields" style="display:${v.mode==='spezzato'?'contents':'none'}"><label>Pausa pranzo dalle<input id="sl1" type="time" value="${v.lunch1||'12:30'}"></label><label>Pausa pranzo alle<input id="sl2" type="time" value="${v.lunch2||'14:30'}"></label></div><label>Min. personale giornaliero<input id="smt" type="number" min="0" value="${v.mtotal??1}"></label><label>Min. persone in apertura<input id="smo" type="number" min="0" value="${v.mopen??1}"></label><label>Min. persone in chiusura<input id="smc" type="number" min="0" value="${v.mclose??1}"></label><label>Min. persone in pausa<input id="smp" type="number" min="0" value="${v.mpause??0}"></label></div><button class="btn green section" onclick="saveStore('${id}','${key||''}')">Salva</button>`)}function splitFields(){let f=document.getElementById('splitFields');if(f)f.style.display=document.getElementById('ssplit').checked?'contents':'none'}function saveStore(id,key){let s=db.stores.find(x=>x.id===id);if(!s)return;let split=document.getElementById('ssplit').checked;let v={closed:sclosed.checked,mode:split?'spezzato':'continuato',open:sopen.value,close:sclose.value,lunch1:document.getElementById('sl1')?.value||'12:30',lunch2:document.getElementById('sl2')?.value||'14:30',mtotal:+smt.value,mopen:+smo.value,mclose:+smc.value,mpause:+smp.value};let actual=sdate.value;if(actual){s.exceptions[actual]=v}else{let dayKey=/^weekly-\d$/.test(String(key||''))?key:null;if(dayKey)s.days[dayKey]=v;else{alert('Seleziona il giorno standard da modificare.');return}}save();closeModal();render()}
+function stores(){if(user.ruolo!==3)return '<div class="card">Accesso non disponibile.</div>';return db.stores.map(s=>`<div class="section card"><div class="top"><h3>${esc(s.name)}</h3></div><div class="tablewrap"><table class="table"><tr><th>Giorno</th><th>Orario</th><th>Festivo</th><th>Min giornaliero</th><th>Min apertura</th><th>Min chiusura</th><th>Min pausa</th><th></th></tr>${DAYS.map((d,i)=>{let v=s.days['weekly-'+i]||{};return `<tr><td>${d}</td><td>${v.closed?'CHIUSO':(v.mode==='spezzato'?'Spezzato '+(v.lunch1||'')+'–'+(v.lunch2||''):(v.open||'—')+'–'+(v.close||'—'))}</td><td>${v.closed?'Sì':'No'}</td><td>${v.mtotal??'—'}</td><td>${v.mopen??'—'}</td><td>${v.mclose??'—'}</td><td>${v.mpause??'—'}</td><td><button class="btn secondary" onclick="storeModal('${s.id}','weekly-${i}')">Modifica</button></td></tr>`}).join('')}</table></div><div class="actions section"><input id="ex_${s.id}" type="date"><button class="btn secondary" onclick="storeModal('${s.id}',document.getElementById('ex_${s.id}').value)">Modifica data specifica</button></div></div>`).join('')}
+function history(){let sundays=[];let d=new Date();d.setDate(d.getDate()-((d.getDay()||7)));for(let i=0;i<12;i++){let x=new Date(d);x.setDate(d.getDate()-i*7);sundays.push(x.toISOString().slice(0,10))}let es=db.employees.filter(e=>user.ruolo===3||e.negozio===user.negozio);return `<div class="card"><h3>Domeniche lavorate</h3><div class="matrix"><table><tr><th>Negozio / lavoratore</th>${sundays.map(x=>`<th>${x.slice(8,10)}/${x.slice(5,7)}</th>`).join('')}</tr>${STORES.map(st=>{let ee=es.filter(e=>e.negozio===st[0]);return ee.length?`<tr><th colspan="13">${st[1]}</th></tr>`+ee.map(e=>`<tr><td>${esc(e.nome)} ${esc(e.cognome)}</td>${sundays.map(x=>{let w=db.shifts.some(s=>String(s.emp)===String(e.id)&&s.date===x&&s.type!=='Riposo');return `<td class="${w?'worked':''}">${w?'●':'—'}</td>`}).join('')}</tr>`).join(''):''}).join('')}</table></div></div>`}
+function crossStoreShiftInfo(emp,date,store){
+  const other=db.shifts.filter(s=>String(s.emp)===String(emp.id)&&s.date===date&&s.type==='Turno'&&s.store!==store);
+  if(!other.length)return null;
+  const names=[...new Set(other.map(s=>storeNameOf(s.store)))];
+  return {shifts:other,names};
+}
+function weekShiftOnDate(emp,date){return db.shifts.find(s=>String(s.emp)===String(emp.id)&&s.date===date&&s.type==='Turno')||null}
+function weekRestKind(emp,week,date,store){const dates=shiftWeekDates(week),wd=new Date(date+'T12:00:00').getDay(),dayNo=wd===0?6:wd-1;if((emp.riposiFissi||[]).includes(String(dayNo))&&String(store)===String(emp.negozio)&&!weekShiftOnDate(emp,date))return 'fixed';const sunday=dates.find(d=>isSunday(d)),sundayShift=sunday?weekShiftOnDate(emp,sunday):null;const comp=(emp.compensativi||[]).map(String).filter(x=>!(emp.riposiFissi||[]).includes(x));if(sundayShift&&comp.includes(String(dayNo))&&date!==sunday&&String(store)===String(sundayShift.store)&&!weekShiftOnDate(emp,date))return 'comp';return ''}
+function restLabel(kind){return kind==='comp'?'RIP. COMP.':'RIPOSO'}
+function editRestDay(empId,date,store,kind){const e=db.employees.find(x=>String(x.id)===String(empId));if(!e)return;const label=restLabel(kind);if(!confirm('ATTENZIONE: stai modificando il '+label+' di '+e.nome+' '+e.cognome+' del '+date+'. La modifica può rendere la settimana non conforme ai riposi previsti. Vuoi procedere?'))return;let x=db.shifts.find(s=>String(s.emp)===String(empId)&&s.date===date&&s.store===store&&s.type!=='Turno');if(!x){x={id:Date.now()+Math.floor(Math.random()*100000),emp:e.id,date,store,in:'',out:'',breakStart:'',breakEnd:'',type:kind==='comp'?'Riposo Comp.':'Riposo',note:'Riposo modificabile'};db.shifts.push(x);save()}shiftModal(x.id)}function shifts(){let list=db.shifts.slice();if(user.ruolo===2)list=list.filter(s=>s.store===user.negozio);const emps=[...new Set(list.map(s=>String(s.emp)))].map(id=>db.employees.find(e=>String(e.id)===id)).filter(Boolean);return '<div class="card"><h3>Turni</h3><div class="muted section">Le ore da recuperare si aggiornano automaticamente in base alle ore contrattuali e ai turni inseriti. Il Titolare può correggere il saldo dalla scheda Contratto & Turni.</div><div class="tablewrap"><table class="table"><tr><th>Data</th><th>Lavoratore</th><th>Negozio</th><th>Entrata</th><th>Uscita</th><th>Tipo</th><th>Ore da recuperare</th></tr>'+list.map(s=>{let e=db.employees.find(x=>x.id==s.emp);return '<tr><td>'+s.date+'</td><td>'+esc(e?e.nome+' '+e.cognome:s.emp)+'</td><td>'+esc(s.store||'')+'</td><td>'+esc(s.in||'')+'</td><td>'+esc(s.out||'')+'</td><td>'+esc(s.type||'Turno')+'</td><td><b>'+recoveryLabel(e)+'</b></td></tr>'}).join('')+'</table></div><div class="section"><h3>Saldo per lavoratore</h3>'+emps.map(e=>'<div class="card section"><b>'+esc(e.nome+' '+e.cognome)+'</b><span style="float:right"><b>'+recoveryLabel(e)+'</b></span></div>').join('')+'</div></div>'}
+function notifications(){let ns=db.notifications.filter(n=>n.emp==='all'||String(n.emp)===String(user.id));return `<div class="actions"><button class="btn" onclick="db.notifications.forEach(n=>{if(n.emp==='all'||String(n.emp)===String(user.id))n.read=true});save();render()">Segna tutte lette</button></div>${ns.map(n=>`<div class="card section"><b>${n.read?'':'● '}${esc(n.text)}</b><div class="muted">${new Date(n.date).toLocaleString('it-IT')}</div></div>`).join('')||'<div class="card section">Nessuna notifica.</div>'}`}
+function profile(){return `<div class="card"><h3>${esc(user.nome||'')} ${esc(user.cognome||'')}</h3><p>${esc(user.email||'')}</p><p class="muted">${roles[user.ruolo]||''}</p></div>`}
+function courseModal(id){let c=id?db.courses.find(x=>String(x.id)===String(id)):null;let today=todayDate();c=c||{id:Date.now(),emp:'',titolo:'',categoria:'Sicurezza',ente:'',data:today,scadenza:'',durata:4,stato:'programmato',attestato:'',note:''};window._course=c;openModal(id?'Scheda corso':'Nuovo corso',`<div class="form"><label>Lavoratore<select id="coEmp"><option value="">Seleziona lavoratore</option>${db.employees.map(e=>`<option value="${e.id}" ${String(c.emp)===String(e.id)?'selected':''}>${esc(e.nome)} ${esc(e.cognome)}</option>`).join('')}</select></label><label>Titolo corso<input id="coTitle" value="${esc(c.titolo)}" placeholder="Es. Sicurezza generale"></label><label>Categoria<select id="coCat">${['Sicurezza','Antincendio','Primo soccorso','Privacy','HACCP','Formazione professionale','Altro'].map(x=>`<option ${c.categoria===x?'selected':''}>${x}</option>`).join('')}</select></label><label>Ente / formatore<input id="coProvider" value="${esc(c.ente)}"></label><label>Data corso<input id="coDate" type="date" value="${c.data||''}"></label><label>Scadenza<input id="coExpiry" type="date" value="${c.scadenza||''}"></label><label>Durata (ore)<input id="coHours" type="number" min="0" step="0.5" value="${c.durata||0}"></label><label>Stato<select id="coStatus">${['programmato','in corso','completato','scaduto'].map(x=>`<option ${c.stato===x?'selected':''}>${x}</option>`).join('')}</select></label><label>Attestato / documento<input id="coCert" value="${esc(c.attestato)}" placeholder="URL o riferimento documento"></label><label style="grid-column:1/-1">Note<textarea id="coNotes" rows="3">${esc(c.note)}</textarea></label></div><div class="actions section"><button class="btn green" onclick="saveCourse()">Salva corso</button>${id?'<button class="btn danger" onclick="deleteCourse()">Elimina</button>':''}</div>`)}
+function todayDate(){return new Date().toISOString().slice(0,10)}
+function saveCourse(){let c=window._course;c.emp=coEmp.value;c.titolo=coTitle.value.trim();c.categoria=coCat.value;c.ente=coProvider.value.trim();c.data=coDate.value;c.scadenza=coExpiry.value;c.durata=+coHours.value||0;c.stato=coStatus.value;c.attestato=coCert.value.trim();c.note=coNotes.value.trim();if(!c.emp||!c.titolo){alert('Seleziona il lavoratore e inserisci il titolo del corso.');return}let i=db.courses.findIndex(x=>String(x.id)===String(c.id));if(i<0)db.courses.push(c);else db.courses[i]=c;save();closeModal();render()}
+function deleteCourse(){if(!confirm('Eliminare definitivamente questo corso?'))return;db.courses=db.courses.filter(x=>String(x.id)!==String(window._course.id));save();closeModal();render()}
+function courseState(c){if(c.scadenza&&c.scadenza<todayDate()&&c.stato!=='completato')return 'scaduto';if(c.scadenza&&c.scadenza>=todayDate()){let d=Math.ceil((new Date(c.scadenza)-new Date(todayDate()))/86400000);if(d<=30)return 'in_scadenza'}return c.stato||'programmato'}
+function courses(){let q=document.getElementById('courseQ')?.value||'',cat=document.getElementById('courseCat')?.value||'',st=document.getElementById('courseStatus')?.value||'';let list=db.courses.filter(c=>{let e=db.employees.find(x=>String(x.id)===String(c.emp));let mine=user.ruolo===1?String(c.emp)===String(user.id):true;return mine&&(!q||String(c.titolo+' '+(e?.nome||'')+' '+(e?.cognome||'')).toLowerCase().includes(q.toLowerCase()))&&(!cat||c.categoria===cat)&&(!st||courseState(c)===st)});let exp=db.courses.filter(c=>courseState(c)==='in_scadenza').length,scad=db.courses.filter(c=>courseState(c)==='scaduto').length,done=db.courses.filter(c=>c.stato==='completato').length;return `<div class="grid"><div class="card"><div class="muted">Corsi totali</div><div class="stat">${db.courses.length}</div></div><div class="card"><div class="muted">Completati</div><div class="stat">${done}</div></div><div class="card"><div class="muted">In scadenza</div><div class="stat">${exp}</div></div><div class="card"><div class="muted">Scaduti</div><div class="stat">${scad}</div></div></div><div class="actions section"><input id="courseQ" placeholder="Cerca corso o lavoratore" value="${esc(q)}" oninput="render()"><select id="courseCat" onchange="render()"><option value="">Tutte le categorie</option>${['Sicurezza','Antincendio','Primo soccorso','Privacy','HACCP','Formazione professionale','Altro'].map(x=>`<option ${cat===x?'selected':''}>${x}</option>`).join('')}</select><select id="courseStatus" onchange="render()"><option value="">Tutti gli stati</option>${['programmato','in corso','completato','in_scadenza','scaduto'].map(x=>`<option value="${x}" ${st===x?'selected':''}>${x.replace('_',' ')}</option>`).join('')}</select>${user.ruolo===3?'<button class="btn" onclick="courseModal()">+ Nuovo corso</button>':''}</div><div class="section tablewrap"><table class="table"><tr><th>Lavoratore</th><th>Corso</th><th>Categoria</th><th>Data</th><th>Scadenza</th><th>Stato</th><th>Attestato</th><th></th></tr>${list.map(c=>{let e=db.employees.find(x=>String(x.id)===String(c.emp)),s=courseState(c);return `<tr><td>${e?esc(e.nome+' '+e.cognome):'—'}</td><td><b>${esc(c.titolo)}</b><div class="muted">${esc(c.ente||'')}</div></td><td>${esc(c.categoria||'')}</td><td>${c.data||'—'}</td><td>${c.scadenza||'—'}</td><td>${esc(s.replace('_',' '))}</td><td>${c.attestato?`<a href="${esc(c.attestato)}" target="_blank" rel="noopener">Apri</a>`:'—'}</td><td>${user.ruolo===3?`<button class="btn secondary" onclick="courseModal('${c.id}')">Apri</button>`:''}</td></tr>`}).join('')||'<tr><td colspan="8">Nessun corso presente.</td></tr>'}</table></div>`}
+function reports(){return `<div class="grid"><div class="card"><b>Presenze</b><div class="stat">${db.shifts.length}</div></div><div class="card"><b>Assenze</b><div class="stat">${db.absences.length}</div></div><div class="card"><b>Formazione</b><div class="stat">${db.courses.length}</div></div></div>`}
+
+function audit(action,detail){db.audit.unshift({id:Date.now()+Math.random(),at:new Date().toISOString(),user:String(user.id),name:(user.nome||'')+' '+(user.cognome||''),action,detail});if(db.audit.length>500)db.audit.length=500}
+function empName(id){const e=db.employees.find(x=>String(x.id)===String(id));return e?e.nome+' '+e.cognome:'Utente '+id}
+function refreshNotifications(){const now=todayDate();db.courses.forEach(c=>{if(!c.scadenza)return;const days=Math.ceil((new Date(c.scadenza)-new Date(now))/86400000);if(days>=0&&days<=30){const key='course:'+c.id+':'+c.scadenza;if(!db.notifications.some(n=>n.key===key&&String(n.emp)===String(c.emp))){db.notifications.unshift({id:Date.now()+Math.random(),key,emp:String(c.emp),text:'Il corso "'+c.titolo+'" scade tra '+days+' giorni',read:false,date:new Date().toISOString()})}}});db.absences.filter(a=>a.stato==='in_attesa').forEach(a=>{const key='absence:'+a.id;if(!db.notifications.some(n=>n.key===key&&String(n.emp)===String(a.emp))){db.notifications.unshift({id:Date.now()+Math.random(),key,emp:String(a.emp),text:'La richiesta di '+a.tipo.toLowerCase()+' è in attesa di approvazione',read:false,date:new Date().toISOString()})}});save()}
+function dashboard(){refreshNotifications();const pending=db.absences.filter(a=>a.stato==='in_attesa'&&(user.ruolo>=2||String(a.emp)===String(user.id))).length;const exp=db.courses.filter(c=>courseState(c)==='in_scadenza'&&(user.ruolo!==1||String(c.emp)===String(user.id))).length;return '<div class="grid"><div class="card"><div class="muted">Dipendenti</div><div class="stat">'+db.employees.length+'</div></div><div class="card"><div class="muted">Turni</div><div class="stat">'+db.shifts.length+'</div></div><div class="card"><div class="muted">Richieste in attesa</div><div class="stat">'+pending+'</div></div><div class="card"><div class="muted">Scadenze formazione</div><div class="stat">'+exp+'</div></div></div><div class="section grid">'+STORES.map(s=>'<div class="card"><b>'+s[1]+'</b><div class="muted">Configurazione punto vendita</div><button class="btn section" onclick="go(\'stores\')">Apri</button></div>').join('')+'</div>'}
+function attendance(){const mine=user.ruolo===1;let list=db.attendance.filter(a=>!mine||String(a.emp)===String(user.id));const todayRec=list.find(a=>a.date===todayDate()&&String(a.emp)===String(user.id));return '<div class="grid"><div class="card"><div class="muted">Oggi</div><div class="stat">'+todayDate()+'</div><p>'+(!todayRec?'Nessuna entrata registrata':('Entrata <b>'+todayRec.in+'</b><br>Uscita <b>'+(todayRec.out||'—')+'</b><br>Pausa <b>'+(todayRec.breakMin||0)+' min</b>'))+'</p><div class="actions">'+(!todayRec?'<button class="btn green" onclick="clockIn()">▶ Entrata</button>':(!todayRec.out?'<button class="btn" onclick="clockOut()">■ Uscita</button><button class="btn secondary" onclick="addBreak()">☕ Pausa</button>':''))+'</div></div><div class="card"><div class="muted">Ore lavorate oggi</div><div class="stat">'+workedHours(todayRec)+'</div><p class="muted">Calcolo basato sulle timbrature.</p></div></div><div class="section tablewrap"><table class="table"><tr><th>Data</th><th>Lavoratore</th><th>Negozio</th><th>Entrata</th><th>Uscita</th><th>Pausa</th><th>Ore</th><th>Stato</th></tr>'+list.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,100).map(a=>'<tr><td>'+a.date+'</td><td>'+esc(empName(a.emp))+'</td><td>'+esc(a.store||'')+'</td><td>'+a.in+'</td><td>'+(a.out||'—')+'</td><td>'+(a.breakMin||0)+'</td><td>'+workedHours(a)+'</td><td>'+(a.out?'completa':'aperta')+'</td></tr>').join('')+'</table></div>'}
+function workedHours(a){if(!a||!a.in)return '0:00';const end=a.out||new Date().toTimeString().slice(0,5);const m=(x)=>{const q=x.split(':');return +q[0]*60 + +q[1]};let n=Math.max(0,m(end)-m(a.in)-(a.breakMin||0));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
+function clockIn(){let ex=db.attendance.find(a=>a.date===todayDate()&&String(a.emp)===String(user.id));if(ex){alert('Entrata già registrata.');return}db.attendance.push({id:Date.now(),emp:user.id,date:todayDate(),in:new Date().toTimeString().slice(0,5),out:'',breakMin:0,store:user.negozio||'',status:'aperta'});audit('Presenza','Entrata '+todayDate());save();render()}
+function clockOut(){let a=db.attendance.find(x=>x.date===todayDate()&&String(x.emp)===String(user.id));if(!a){alert('Registra prima l’entrata.');return}a.out=new Date().toTimeString().slice(0,5);a.status='completa';audit('Presenza','Uscita '+todayDate());save();render()}
+function addBreak(){let a=db.attendance.find(x=>x.date===todayDate()&&String(x.emp)===String(user.id));if(!a||a.out){alert('Nessuna presenza aperta.');return}const n=prompt('Minuti di pausa da aggiungere','30');if(n&&+n>0){a.breakMin=(a.breakMin||0)+(+n);audit('Presenza','Pausa '+n+' minuti');save();render()}}
+function shiftWeekKey(date){const d=new Date(date+'T12:00:00');const day=d.getDay()||7;d.setDate(d.getDate()-day+1);return d.toISOString().slice(0,10)}
+function shiftWeekDates(week){const d=new Date(week+'T12:00:00');return Array.from({length:7},(_,i)=>{const x=new Date(d);x.setDate(d.getDate()+i);return x.toISOString().slice(0,10)})}
+function weekLabel(week){const ds=shiftWeekDates(week);return ds[0].slice(8,10)+'/'+ds[0].slice(5,7)+' – '+ds[6].slice(8,10)+'/'+ds[6].slice(5,7)}
+function shiftStores(){return STORES.map(s=>s[0])}
+function weekStoreState(week,store){if(!db.shiftWeeks||typeof db.shiftWeeks!=='object')db.shiftWeeks={};if(!db.shiftWeeks[week]||typeof db.shiftWeeks[week]!=='object')db.shiftWeeks[week]={};if(!db.shiftWeeks[week][store])db.shiftWeeks[week][store]={status:'bozza'};return db.shiftWeeks[week][store]}
+function weekStoreStatus(week,store){return weekStoreState(week,store).status||'bozza'}
+function allStoresDirectorApproved(week){return shiftStores().every(s=>['approvata_direttore','inviato_titolare','approvata_titolare'].includes(weekStoreStatus(week,s)))}
+function allStoresOwnerApproved(week){return shiftStores().every(s=>weekStoreStatus(week,s)==='approvata_titolare')}function approvedWeekHistory(week,store,limit=12){const out=[];const d=new Date(week+'T12:00:00');for(let i=1;i<=26&&out.length<limit;i++){d.setDate(d.getDate()-7);const w=d.toISOString().slice(0,10);if(weekStoreStatus(w,store)==='approvata_titolare')out.push(w)}return out}
+function continuityProfile(emp,store,week){const history=approvedWeekHistory(week,store,12);const profile={weekdays:new Set(),starts:new Map(),partners:new Map(),partnerDays:new Map()};for(const w of history){const ds=shiftWeekDates(w);for(const s of db.shifts.filter(x=>x.store===store&&ds.includes(x.date)&&String(x.emp)===String(emp.id)&&x.type==='Turno')){const wd=new Date(s.date+'T12:00:00').getDay();profile.weekdays.add(wd);if(s.in)profile.starts.set(wd,s.in)}for(const d of ds){const mine=db.shifts.filter(x=>x.store===store&&x.date===d&&x.type==='Turno'&&String(x.emp)===String(emp.id));if(!mine.length)continue;for(const s of db.shifts.filter(x=>x.store===store&&x.date===d&&x.type==='Turno'&&String(x.emp)!==String(emp.id))){profile.partners.set(String(s.emp),(profile.partners.get(String(s.emp))||0)+1);const wd=new Date(d+'T12:00:00').getDay();profile.partnerDays.set(wd,(profile.partnerDays.get(wd)||0)+1)}}}return{history,profile}}
+
+function approvedAbsence(emp,date){return db.absences.some(a=>String(a.emp)===String(emp)&&a.stato==='approvato'&&date>=a.da&&date<=a.a)}
+function sundayPolicy(emp){return emp.policyDomeniche||'ogni2'}
+function isSunday(date){return new Date(date+'T12:00:00').getDay()===0}
+function sundayShiftExists(emp,date){return db.shifts.some(s=>String(s.emp)===String(emp)&&s.date===date&&s.type==='Turno')}
+function sundayDatesAround(date){const d=new Date(date+'T12:00:00');const out=[];for(let i=-12;i<=12;i++){const x=new Date(d);x.setDate(d.getDate()+i*7);out.push(x.toISOString().slice(0,10))}return out}
+function sundayCanWork(emp,date){
+  if(!isSunday(date))return true;
+  const policy=sundayPolicy(emp);
+  if(policy==='tutte')return true;
+  if(policy==='nessuna')return false;
+  const d=new Date(date+'T12:00:00');
+  if(policy==='ogni3'){
+    const prev=new Date(d);prev.setDate(d.getDate()-14);
+    const p=prev.toISOString().slice(0,10);
+    return !sundayShiftExists(emp,p);
+  }
+  // 1 ogni 2 = alternanza normale. Se per un'eccezione il lavoratore
+  // ha già lavorato due domeniche consecutive, le due domeniche successive
+  // diventano di riposo: W-W-O-O-W, poi si riprende l'alternanza.
+  const sundays=[];
+  for(let i=1;i<=12;i++){
+    const x=new Date(d);
+    x.setDate(d.getDate()-7*i);
+    sundays.push(x.toISOString().slice(0,10));
+  }
+  const worked=i=>sundayShiftExists(emp,sundays[i-1]);
+
+  // Due domeniche consecutive già lavorate => questa è la prima delle
+  // due domeniche di recupero obbligatorie.
+  if(worked(1)&&worked(2))return false;
+
+  // Se le due domeniche precedenti sono state di riposo e le due ancora
+  // precedenti sono state lavorate, questa è la ripresa dopo il recupero.
+  if(!worked(1)&&!worked(2)&&worked(3)&&worked(4))return true;
+
+  // Alternanza ordinaria: lavoro/riposo/lavoro/riposo.
+  const lastWorkedIndex=sundays.findIndex(x=>sundayShiftExists(emp,x));
+  if(lastWorkedIndex<0)return true;
+  return lastWorkedIndex%2===1;
+}
+function courseOnDate(emp,date){return db.courses.find(c=>String(c.emp)===String(emp)&&c.data===date&&(c.stato==='programmato'||c.stato==='in corso'||c.stato==='completato'))||null}
+function storeDay(store,date){const s=db.stores.find(x=>x.id===store);if(!s)return null;const d=new Date(date+'T12:00:00').getDay();return (s.exceptions&&s.exceptions[date])||((s.days&&s.days['weekly-'+d])||null)}
+function addMinutesToTime(t,min){const q=t.split(':').map(Number);let n=q[0]*60+q[1]+min;return String(Math.floor((n+1440)%1440/60)).padStart(2,'0')+':'+String((n+1440)%60).padStart(2,'0')}
+function timeMin(t){const q=String(t||'00:00').split(':').map(Number);return (q[0]||0)*60+(q[1]||0)}
+function timeStr(n){n=Math.max(0,Math.round(n));return String(Math.floor(n/60)%24).padStart(2,'0')+':'+String(n%60).padStart(2,'0')}
+function contractPause(e,h){
+  if(e&&e.pausaTipo==='fissa'){
+    const a=timeMin(e.pausaInizio||'12:00'),b=timeMin(e.pausaFine||'13:30');
+    if(b>a)return {minutes:b-a,start:a,end:b};
+  }
+  const mins=Math.max(0,Number(e?.pausaMin)||0);
+  if(mins>0)return {minutes:mins,start:timeMin(h?.lunch1||'12:30'),end:timeMin(h?.lunch1||'12:30')+mins};
+  return {minutes:0,start:0,end:0};
+}
+const GAGGIOLO_HISTORY_SEED={"alessio":[["08:30","12:00","13:30","19:30",144],["08:30","12:00","13:30","19:00",22],["08:30","12:00","13:30","18:00",16]],"roberto db":[["08:30","12:30","13:30","19:30",37],["08:30","12:30","13:30","18:00",18],["08:30","13:00","14:00","19:30",14]],"andrea":[["09:30","14:00","15:00","19:30",50],["08:30","14:00","15:00","19:30",38],["08:30","14:00","15:00","19:00",11]],"mattia":[["08:30","14:00","15:00","19:30",22],["08:30","11:30","13:30","19:30",16],["08:30","13:00","14:00","19:30",14]],"manuel":[["09:00","13:00","14:00","19:30",15],["08:30","13:00","14:00","19:30",15],["08:30","13:30","14:30","19:30",7]],"allan":[["10:00","13:30","14:30","19:30",6],["08:30","13:00","14:00","19:30",5],["08:30","13:30","14:30","19:30",4]],"pietro":[["08:30","12:30","13:30","19:30",15],["08:30","12:30","13:30","19:00",7],["09:30","12:30","13:30","19:30",6]],"beretta m":[["09:30","13:00","14:00","19:30",10],["09:30","12:30","13:30","19:30",3],["09:00","13:00","14:00","19:30",3]],"alfio":[["08:30","13:00","14:00","18:30",4],["08:30","13:30","14:30","18:30",3],["07:00","12:30","13:30","18:00",1]],"massimo":[["08:30","13:00","14:00","19:00",7],["09:00","12:30","13:30","19:00",3],["09:00","13:30","14:30","19:00",3]]};
+function historicalNameKeys(e){return [...new Set([e&&e.nome,e&&e.cognome,e&&(e.nome+' '+e.cognome),e&&(e.cognome+' '+e.nome)].filter(Boolean).map(x=>String(x).trim().toLowerCase()))]}
+function historicalCandidates(e,store,week){const out=[];if(store==='GAG')for(const k of historicalNameKeys(e))if(GAGGIOLO_HISTORY_SEED[k])out.push(...GAGGIOLO_HISTORY_SEED[k].map(p=>({p,weight:p[4]||1,source:'base'})));const approved=new Set(approvedWeekHistory(week||shiftWeekKey(todayDate()),store,26));const m=new Map();for(const s of db.shifts)if(approved.has(shiftWeekKey(s.date))&&String(s.emp)===String(e.id)&&s.store===store&&s.type==='Turno'&&s.in&&s.out){const p=[s.in,s.breakStart||'',s.breakEnd||'',s.out],k=p.join('|'),v=m.get(k)||{p,weight:0};v.weight++;m.set(k,v)}for(const v of m.values())out.push({p:[...v.p,v.weight],weight:v.weight,source:'approved'});return out.sort((a,b)=>b.weight-a.weight).slice(0,18)}
+function historicalFitScore(e,store,date,kind){const h=storeDay(store,date),a=historicalCandidates(e,store,shiftWeekKey(date));if(!h||!a.length)return 0;const open=timeMin(h.open||'08:30'),close=timeMin(h.close||'19:30');let best=20;for(const x of a){const p=x.p;if(!p[0]||!p[3])continue;let s=Math.abs(timeMin(p[0])-open)/30*.35+Math.abs(timeMin(p[3])-close)/30*.25;if(kind==='open'&&p[0]===h.open)s-=7;if(kind==='close'&&p[3]===h.close)s-=7;s-=Math.min(4,Math.log10((x.weight||1)+1)*1.5);best=Math.min(best,s)}return Math.max(-8,best)}
+function historicalTemplate(e,store,date,kind,worked,h){const a=historicalCandidates(e,store,shiftWeekKey(date));if(!a.length)return null;const open=timeMin(h.open||'08:30'),close=timeMin(h.close||'19:30'),want=Math.max(0,Math.min(10,Number(worked)||0));if(!want)return null;const fixed=e&&e.pausaTipo==='fissa',fs=timeMin(e&&e.pausaInizio||'12:00'),fe=timeMin(e&&e.pausaFine||'13:30'),q=[];for(const x of a){const p=x.p,bs=p[1]?timeMin(p[1]):0,be=p[2]?timeMin(p[2]):0,pause=bs&&be&&be>bs?be-bs:0,base=Math.max(0,(timeMin(p[3])-timeMin(p[0])-pause)/60);if(!base)continue;if(fixed&&pause&&(bs!==fs||be!==fe))continue;let score=Math.abs(base-want)*7-Math.min(12,Math.log10((x.weight||1)+1)*5);if(kind==='open')score+=p[0]===h.open?-18:Math.abs(timeMin(p[0])-open)/30*2;if(kind==='close')score+=p[3]===h.close?-18:Math.abs(timeMin(p[3])-close)/30*2;q.push({p,score,pause})}q.sort((a,b)=>a.score-b.score);for(const x of q){const p=x.p,bs=p[1]?timeMin(p[1]):0,be=p[2]?timeMin(p[2]):0,pause=x.pause;let start=timeMin(p[0]),end=start+want*60+pause;if(kind==='open'){start=open;end=pause?be+want*60:open+want*60}if(kind==='close'){end=close;start=pause?close-want*60-pause:close-want*60}if(start>=open&&end<=close&&end>start){if(want<=6||!pause){end=start+want*60;if(end>close)continue;return{in:timeStr(start),breakStart:'',breakEnd:'',out:timeStr(end),worked:want,source:'storico'}}return{in:timeStr(start),breakStart:timeStr(bs),breakEnd:timeStr(be),out:timeStr(end),worked:want,source:'storico'}}}return null}
+function generatedTimesBase(e,h,kind,worked){const open=timeMin(h.open||'08:30'),close=timeMin(h.close||'17:30');let work=Math.max(0,Math.min(10,Number(worked)||0));let p=contractPause(e,h);if(work<=6)p={minutes:0,start:0,end:0};if(p.minutes>0&&close-open<work*60+p.minutes)work=Math.max(0,(close-open-p.minutes)/60);if(work<=0)return null;if(p.minutes>0&&e.pausaTipo==='fissa'){const ps=p.start,pe=p.end;if(kind==='close'){let start=close-work*60-p.minutes;if(start<open)start=open;if(start>ps)start=Math.max(open,ps-Math.min(60,work*30));const post=Math.max(0,work-(ps-start)),end=Math.max(pe,ps)+post;if(end>close+1)return null;return{in:timeStr(start),breakStart:timeStr(ps),breakEnd:timeStr(pe),out:timeStr(end),worked:Math.max(0,(end-start-p.minutes)/60)}}if(ps<open||pe>close)return generatedTimesBase({...e,pausaTipo:'flessibile'},h,kind,work);const before=Math.min(work,Math.max(0,ps-open)),after=Math.max(0,work-before),end=pe+after;if(end>close)return null;return{in:timeStr(open),breakStart:timeStr(ps),breakEnd:timeStr(pe),out:timeStr(end),worked:work}}if(kind==='close'){const end=close,start=end-work*60-p.minutes;if(start<open)return null;const bs=p.minutes?Math.round(start+Math.min(work*60/2,Math.max(0,(work*60-p.minutes)/2))):0,be=p.minutes?bs+p.minutes:0;return{in:timeStr(start),breakStart:p.minutes?timeStr(bs):'',breakEnd:p.minutes?timeStr(be):'',out:timeStr(end),worked:work}}const start=open,end=start+work*60+p.minutes;if(end>close)return null;const bs=p.minutes?Math.round(start+(work*60-p.minutes)/2):0,be=p.minutes?bs+p.minutes:0;return{in:timeStr(start),breakStart:p.minutes?timeStr(bs):'',breakEnd:p.minutes?timeStr(be):'',out:timeStr(end),worked:work}}
+function generatedTimes(e,h,kind,worked,date,store){return historicalTemplate(e,store,date,kind,worked,h)||generatedTimesBase(e,h,kind,worked)}
+function eligibleForStore(e,store){
+  return e.negozio===store||(Array.isArray(e.mobilita)&&e.mobilita.includes(store));
+}
+function employeeHasDay(e,date){
+  return db.shifts.some(s=>String(s.emp)===String(e.id)&&s.date===date&&(s.type==='Turno'||s.type==='Corso'||s.type==='Ferie'||s.type==='Malattia'||s.type==='Infortunio'));
+}
+function resetWeek(week){
+  if(user.ruolo!==3)return;
+  week=week||shiftWeekKey(todayDate());
+  if(!confirm('RESET settimana '+weekLabel(week)+'? Verranno cancellati tutti i turni, corsi inseriti automaticamente e stati di approvazione della settimana.'))return;
+  const dates=shiftWeekDates(week);
+  db.shifts=db.shifts.filter(s=>!dates.includes(s.date));
+  if(db.shiftWeeks&&db.shiftWeeks[week])delete db.shiftWeeks[week];
+  audit('Turni','Reset settimana '+week);
+  save();render();
+}
+function excelNorm(v){return String(v??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function excelWeekStart(week,year){
+  const d=new Date(Date.UTC(year,0,4)),day=d.getUTCDay()||7;
+  d.setUTCDate(d.getUTCDate()-day+1+(Number(week)-1)*7);
+  return d.toISOString().slice(0,10)
+}
+function excelStoreId(v){
+  const n=excelNorm(v);
+  for(const s of STORES)if(n===excelNorm(s[0])||n===excelNorm(s[1]))return s[0];
+  return null;
+}
+function excelFindEmployee(label){
+  const n=excelNorm(label);
+  if(!n)return{emp:null,amb:[]};
+  const all=db.employees.filter(e=>e&&e.inTurni!==false);
+  const exact=all.filter(e=>[
+    e.nome+' '+e.cognome,
+    e.cognome+' '+e.nome,
+    e.nome,
+    e.cognome,
+    (e.nome||'')+' '+String(e.cognome||'').split(' ')[0],
+    String(e.cognome||'').split(' ')[0]+' '+(e.nome||'')
+  ].some(v=>excelNorm(v)===n));
+  if(exact.length===1)return{emp:exact[0],amb:[]};
+  if(exact.length>1)return{emp:null,amb:exact};
+  const tokens=n.split(' ').filter(Boolean);
+  const scored=all.map(e=>{
+    const en=excelNorm(e.nome||''),ec=excelNorm(e.cognome||''),full=excelNorm((e.nome||'')+' '+(e.cognome||''));
+    let score=0;
+    for(const t of tokens){
+      if(en===t)score+=5;
+      else if(ec===t)score+=5;
+      else if(en.startsWith(t))score+=3;
+      else if(ec.startsWith(t))score+=3;
+      else if(full.includes(t))score+=1;
+    }
+    if(full.includes(n)||n.includes(full))score+=4;
+    return{e,score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  if(!scored.length)return{emp:null,amb:[]};
+  const top=scored[0].score,near=scored.filter(x=>x.score===top).map(x=>x.e);
+  return near.length===1?{emp:near[0],amb:[]}:{emp:null,amb:near};
+}
+function excelStatus(v){
+  const n=excelNorm(v);
+  if(!n)return'';
+  if(n==='x'||n==='turno'||n==='presenza')return'Turno';
+  if(n==='riposo')return'Riposo';
+  if(n==='rip comp'||n==='rip comp.'||n==='riposo comp'||n==='riposo compensativo')return'Riposo Comp.';
+  if(n==='ferie')return'Ferie';
+  if(n==='malattia')return'Malattia';
+  if(n==='infortunio')return'Infortunio';
+  const store=excelStoreId(v);
+  return store?store:'UNKNOWN';
+}
+function excelCellValue(row,day){
+  const vals=row.slice(1+day*4,5+day*4).map(v=>String(v??'').trim()).filter(Boolean);
+  if(!vals.length)return'';
+  const uniq=[...new Set(vals.map(excelNorm))];
+  if(uniq.length===1)return vals[0];
+  const priority=['FERIE','MALATTIA','INFORTUNIO','RIPOSO','RIP. COMP.','RIPOSO COMP.','X'];
+  for(const p of priority)if(vals.some(v=>excelNorm(v)===excelNorm(p)))return p;
+  return vals[0];
+}
+function excelImportPlan(rows,fileName,weekNo){
+  weekNo=Number(weekNo);
+  if(!weekNo||weekNo<1||weekNo>53)throw new Error('Numero settimana non valido. Inserisci un valore da 1 a 53.');
+  const year=new Date().getFullYear(),week=excelWeekStart(weekNo,year),dates=shiftWeekDates(week);
+  const storesByNorm=new Map(STORES.flatMap(s=>[[excelNorm(s[0]),s[0]],[excelNorm(s[1]),s[0]]]));
+  const dayNames=['lunedi','martedi','mercoledi','giovedi','venerdi','sabato','domenica'];
+  const dayCols=new Array(7).fill(null);
+  for(let r=0;r<Math.min(rows.length,30);r++){
+    const row=rows[r]||[];
+    for(let c=0;c<row.length;c++){
+      const n=excelNorm(row[c]);
+      const di=dayNames.indexOf(n);
+      if(di>=0&&!dayCols[di])dayCols[di]=c;
+    }
+  }
+  let currentStore='',currentStoreLabel='';
+  const records=[],unmatched=[],ambiguous=[],unauthorized=[],closed=[],warnings=[];
+  function employeeFromRow(row){
+    for(let c=0;c<row.length;c++){
+      const v=String(row[c]??'').trim();if(!v)continue;
+      const m=excelFindEmployee(v);if(m.emp||m.amb.length)return{match:m,col:c,label:v};
+    }
+    return null;
+  }
+  function rowDayValue(row,workerCol,day){
+    const start=dayCols[day];
+    if(start!=null){
+      let end=row.length-1;
+      for(let d=day+1;d<7;d++){if(dayCols[d]!=null){end=dayCols[d]-1;break}}
+      const vals=row.slice(start,Math.max(start+1,end+1)).map(v=>String(v??'').trim()).filter(Boolean);
+      if(vals.length)return excelCellValue(vals);
+    }
+    const offset=workerCol+1;
+    const tail=row.slice(offset);
+    const remaining=tail.length;
+    const group=remaining>=28?4:remaining>=14?2:1;
+    const vals=row.slice(offset+day*group,offset+(day+1)*group).map(v=>String(v??'').trim()).filter(Boolean);
+    if(vals.length)return excelCellValue(vals);
+    return '';
+  }
+  function excelCellValue(vals){
+    if(!vals||!vals.length)return'';
+    const priority=['FERIE','MALATTIA','INFORTUNIO','RIPOSO','RIP. COMP.','RIPOSO COMP.','PRESENZA','TURNO','X'];
+    for(const p of priority)if(vals.some(v=>excelNorm(v)===excelNorm(p)))return p;
+    const statusVals=vals.map(v=>excelStatus(v)).filter(k=>k&&k!=='UNKNOWN');
+    if(statusVals.length)return statusVals[0];
+    return vals[0];
+  }
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r]||[];
+    const nonEmpty=row.map(v=>String(v??'').trim()).filter(Boolean);
+    if(!nonEmpty.length)continue;
+    let sid='';
+    for(const v of nonEmpty){const x=storesByNorm.get(excelNorm(v));if(x){sid=x;break}}
+    const empInfo=employeeFromRow(row);
+    if(sid&&!empInfo){currentStore=sid;currentStoreLabel=nonEmpty.find(v=>storesByNorm.get(excelNorm(v)))||sid;continue}
+    if(!empInfo)continue;
+    if(!currentStore){
+      const inlineStore=nonEmpty.map(v=>storesByNorm.get(excelNorm(v))).find(Boolean);
+      if(inlineStore)currentStore=inlineStore;
+    }
+    const match=empInfo.match;
+    if(!match.emp){
+      if(match.amb.length)ambiguous.push(empInfo.label+' → '+match.amb.map(e=>e.nome+' '+e.cognome).join(', '));
+      else unmatched.push(empInfo.label);
+      continue;
+    }
+    const e=match.emp;
+    for(let d=0;d<7;d++){
+      const raw=rowDayValue(row,empInfo.col,d),kind=excelStatus(raw);
+      if(!kind)continue;
+      if(kind==='UNKNOWN'){
+        const maybeStore=excelStoreId(raw);
+        if(maybeStore){
+          const store=maybeStore;
+          let blockedReason='';
+          if(!eligibleForStore(e,store)){unauthorized.push(empInfo.label+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
+          const h=storeDay(store,dates[d]);if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+empInfo.label);blockedReason=blockedReason||'chiuso'}
+          records.push({emp:e.id,date:dates[d],store,type:'Turno',orarioDaDefinire:true,raw,sourceRow:r+1,blockedReason});
+          continue;
+        }
+        warnings.push(empInfo.label+' '+dates[d]+' · valore Excel non riconosciuto: '+raw);
+        continue;
+      }
+      const store=(kind==='Turno'||kind==='Riposo'||kind==='Riposo Comp.'||kind==='Ferie'||kind==='Malattia'||kind==='Infortunio')?currentStore:kind;
+      const type=(kind===currentStore||kind==='Turno')?'Turno':kind;
+      let blockedReason='';
+      if(store&&type==='Turno'&&!eligibleForStore(e,store)){unauthorized.push(empInfo.label+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
+      const h=storeDay(store,dates[d]);
+      if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+empInfo.label);blockedReason=blockedReason||'chiuso'}
+      if(type==='Turno'&&approvedAbsence(e.id,dates[d]))blockedReason=blockedReason||'assenza';
+      records.push({emp:e.id,date:dates[d],store,type,orarioDaDefinire:type==='Turno',raw,sourceRow:r+1,blockedReason});
+    }
+  }
+  if(!records.length)throw new Error('Nessuna riga di turni riconosciuta nel file. Verifica che il file contenga i nomi dei lavoratori e le colonne dei giorni Lun-Dom.');
+  return{week,weekNo,dates,records,unmatched,ambiguous,unauthorized,closed,warnings,fileName,storeLabels:[...new Set(records.map(x=>x.store).filter(Boolean))]};
+}
+function renderExcelImportPreview(plan){
+  const box=document.getElementById('excelImportPreview');if(!box)return;
+  const byType=plan.records.reduce((a,x)=>(a[x.type]=(a[x.type]||0)+1,a),{});
+  const issues=plan.unmatched.length+plan.ambiguous.length+plan.unauthorized.length+plan.closed.length+plan.warnings.length;
+  const issueHtml=issues?'<div class="card section" style="border-color:#a33"><b>Controlli da verificare</b><div class="muted section">'+
+    (plan.unmatched.length?'<div><b>Lavoratori non trovati:</b> '+plan.unmatched.join(', ')+'</div>':'')+
+    (plan.ambiguous.length?'<div><b>Nomi ambigui:</b> '+plan.ambiguous.join(' · ')+'</div>':'')+
+    (plan.unauthorized.length?'<div><b>Mobilità non autorizzata:</b> '+plan.unauthorized.slice(0,20).join(' · ')+'</div>':'')+
+    (plan.closed.length?'<div><b>Negozio chiuso:</b> '+plan.closed.slice(0,20).join(' · ')+'</div>':'')+
+    (plan.warnings.length?'<div><b>Valori non riconosciuti:</b> '+plan.warnings.slice(0,20).join(' · ')+'</div>':'')+
+    '</div></div>':'<div class="card section"><b>Controlli superati</b><div class="muted">Nessun lavoratore ambiguo, mobilità non autorizzata o negozio chiuso.</div></div>';
+  box.innerHTML='<div class="card"><b>Settimana '+plan.weekNo+' · '+weekLabel(plan.week)+'</b><div class="muted section">'+esc(plan.fileName)+' · '+plan.records.length+' voci importabili</div><div class="section">'+Object.entries(byType).map(([k,v])=>'<span style="display:inline-block;margin:3px 5px 3px 0;padding:5px 8px;border-radius:8px;background:#292d33">'+esc(k)+': <b>'+v+'</b></span>').join('')+'</div></div>'+issueHtml+
+    '<div class="actions section"><button class="btn green" onclick="confirmExcelImport()">✓ Genera settimana da Excel</button><button class="btn secondary" onclick="closeModal()">Annulla</button></div>';
+}
+function importWeekExcelModal(){
+  if(user.ruolo!==3)return;
+  openModal('Genera settimana da Excel','<div class="card"><b>Importa il modello turni Excel</b><div class="muted section">Il file deve contenere le sezioni dei punti vendita e i lavoratori per riga. X = presenza, RIPOSO = riposo, FERIE/MALATTIA = assenza, nome negozio = mobilità autorizzata.</div><input id="excelWeekFile" type="file" accept=".xlsx,.xls" class="section" onchange="readExcelWeek(this)"></div><div id="excelImportPreview" class="section"></div>');
+}
+function readExcelWeek(input){
+  const file=input&&input.files&&input.files[0];if(!file)return;
+  if(typeof XLSX==='undefined'){alert('Lettore Excel non disponibile. Controlla la connessione e riprova.');return}
+  let weekNo=prompt('Numero settimana (1–53):');
+  if(weekNo===null)return;
+  weekNo=String(weekNo).trim();
+  if(!/^[0-9]{1,2}$/.test(weekNo)||Number(weekNo)<1||Number(weekNo)>53){
+    alert('Numero settimana non valido. Inserisci un numero da 1 a 53.');
+    input.value='';return;
+  }
+  file.arrayBuffer().then(buf=>{
+    try{
+      const book=XLSX.read(buf,{type:'array',cellDates:true});
+      const candidates=[];
+      for(const sheetName of book.SheetNames){
+        const sheet=book.Sheets[sheetName];
+        const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false});
+        if(!rows.length)continue;
+        try{
+          const plan=excelImportPlan(rows,file.name+' · '+sheetName,Number(weekNo));
+          candidates.push(plan);
+        }catch(e){}
+      }
+      candidates.sort((a,b)=>b.records.length-a.records.length);
+      if(!candidates.length){
+        const names=book.SheetNames.join(', ');
+        throw new Error('Nessuna riga di turni riconosciuta. Fogli analizzati: '+names+'. Il modello deve contenere almeno un nome lavoratore e le colonne della settimana.');
+      }
+      window._excelImportPlan=candidates[0];
+      renderExcelImportPreview(window._excelImportPlan);
+    }catch(e){
+      window._excelImportPlan=null;
+      alert('Import Excel non riuscito: '+(e&&e.message||e));
+    }
+  }).catch(e=>alert('Impossibile leggere il file Excel: '+(e&&e.message||e)));
+}
+function confirmExcelImport(){
+  const plan=window._excelImportPlan;
+  if(!plan)return;
+  if(plan.unmatched.length||plan.ambiguous.length||plan.unauthorized.length||plan.closed.length||plan.warnings.length){
+    if(!confirm('Il file contiene anomalie evidenziate nella schermata. Vuoi comunque importare solo le voci riconosciute?'))return;
+  }
+  const dates=plan.dates,week=plan.week;
+  const existing=db.shifts.filter(s=>dates.includes(s.date)&&['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio'].includes(s.type));
+  const states=shiftStores().filter(s=>['inviato_direttore','approvata_direttore','inviato_titolare','approvata_titolare'].includes(weekStoreStatus(week,s)));
+  if(existing.length||states.length){
+    if(!confirm('La settimana '+weekLabel(week)+' contiene già una generazione o è già in approvazione. Vuoi sovrascrivere la programmazione importata e riportarla in bozza?'))return;
+  }
+  const valid=plan.records.filter(x=>!x.blockedReason);
+  if(!valid.length){alert('Nessuna voce valida da importare.');return}
+  db.shifts=db.shifts.filter(s=>!(dates.includes(s.date)&&['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio'].includes(s.type)));
+  db.absences=db.absences.filter(a=>!(a.source==='excel-import'&&dates.some(d=>d>=a.da&&d<=a.a)));
+  let n=0,abs=0;
+  for(const x of valid){
+    const shift={id:Date.now()+Math.floor(Math.random()*1000000)+n,emp:x.emp,date:x.date,store:x.store,in:'',out:'',breakStart:'',breakEnd:'',type:x.type,note:'Importato da Excel · '+plan.fileName,source:'excel-import'};
+    if(x.type==='Turno'){shift.orarioDaDefinire=true}
+    db.shifts.push(shift);n++;
+    if(['Ferie','Malattia','Infortunio'].includes(x.type)){
+      db.absences.push({id:Date.now()+Math.floor(Math.random()*1000000)+n,emp:x.emp,tipo:x.type,da:x.date,a:x.date,note:'Importato da Excel · '+plan.fileName,stato:'approvato',source:'excel-import'});abs++;
+    }
+  }
+  for(const st of shiftStores())weekStoreState(week,st).status='bozza';
+  audit('Turni','Importata settimana '+plan.weekNo+' da Excel · '+n+' voci · '+abs+' assenze');
+  save();window._excelImportPlan=null;closeModal();document.getElementById('shiftWeek')?.setAttribute('value',week);render();
+  alert('Settimana '+plan.weekNo+' importata correttamente. È in bozza ed è pronta per l’invio ai Direttori.');
+}
+function generateWeekModal(){
+  if(user.ruolo!==3)return;
+  const w=shiftWeekKey(todayDate());
+  openModal('Genera settimana turni',
+    '<div class="form"><label>Settimana<input id="genWeek" type="date" value="'+w+'" onchange="refreshGenerationMode()"></label><label>Punto vendita<select id="genStore" onchange="refreshGenerationMode()"><option value="">Tutti i punti vendita</option>'+STORES.map(s=>'<option value="'+s[0]+'">'+s[1]+'</option>').join('')+'</select></label><label>Modalità di generazione<select id="genMode" onchange="refreshGenerationMode()"><option value="presence">1 · Solo presenze</option><option value="suggested">2 · Orari suggeriti automaticamente</option></select></label><label><input id="genReplace" type="checkbox"> Sostituisci i turni esistenti</label></div>'+
+    '<div id="genModeInfo" class="card section"></div><div id="genPresenceBox" class="section"></div>'+
+    '<div class="actions section"><button class="btn green" onclick="generateWeek()">Genera settimana</button></div>');
+  refreshGenerationMode();
+}
+function approvedHistorySummary(week,stores){return stores.map(s=>s+': '+approvedWeekHistory(week,s,12).length+' settimane approvate').join(' · ')}
+function presencePlannerHtml(week,stores){
+  const dates=shiftWeekDates(week), workers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false).sort((a,b)=>(a.cognome+' '+a.nome).localeCompare(b.cognome+' '+b.nome,'it'));
+  const heads=dates.map(d=>{const x=new Date(d+'T12:00:00');return '<th>'+DAYS[x.getDay()===0?6:x.getDay()-1]+'<br>'+d.slice(8,10)+'/'+d.slice(5,7)+'</th>'}).join('');
+  const rows=workers.map(e=>{
+    const eligible=stores.filter(s=>eligibleForStore(e,s));
+    const mobility=eligible.filter(s=>s!==e.negozio);
+    const cells=dates.map(d=>{
+      const existing=db.shifts.find(s=>String(s.emp)===String(e.id)&&s.date===d&&s.type==='Turno');
+      const selectedStore=existing&&eligible.includes(existing.store)?existing.store:'';
+      const opts=['<option value="">—</option>'].concat(eligible.map(s=>'<option value="'+s+'" '+(selectedStore===s?'selected':'')+'>'+esc(storeNameOf(s))+(s===e.negozio?' · base':' · mobilità')+'</option>'));
+      const status=selectedStore?(selectedStore===e.negozio?'BASE':'↔ '+esc(storeNameOf(selectedStore))):'';
+      return '<td class="pr-cell" id="prcell_'+e.id+'_'+d+'"><div class="pr-cell-tools"><select id="pr_'+e.id+'_'+d+'" onchange="presencePlannerChange('+e.id+',\''+d+'\',this.value)" title="Assegna il lavoratore al negozio del giorno">'+opts.join('')+'</select><button type="button" class="pr-move-btn" onclick="presenceCycleStore('+e.id+',\''+d+'\')" title="Sposta rapidamente in un altro negozio">↔</button></div><div class="pr-status" id="prstatus_'+e.id+'_'+d+'">'+status+'</div></td>';
+    }).join('');
+    return '<tr><td style="text-align:left;position:sticky;left:0;background:#191b20;z-index:1"><b>'+esc(e.nome+' '+e.cognome)+'</b><div class="muted">Base: '+esc(storeNameOf(e.negozio||''))+'</div><div>'+(mobility.length?'<span class="sp-mobility">↔ '+esc(mobility.map(storeNameOf).join(', '))+'</span>':'<span class="muted">Nessuna mobilità</span>')+'</div></td>'+cells+'</tr>';
+  }).join('');
+  return '<div class="card"><b>Inserisci solo la presenza nel punto vendita</b><div class="muted section">Per ogni lavoratore scegli il negozio del giorno. Il pulsante <b>↔</b> sposta rapidamente la presenza tra i punti vendita autorizzati. Un solo negozio al giorno: se lo sposti, il vecchio negozio non resta assegnato. Gli orari restano vuoti e saranno inseriti dal Direttore.</div><div class="matrix section"><table><thead><tr><th>Lavoratore / mobilità</th>'+heads+'</tr></thead><tbody>'+rows+'</tbody></table></div></div>';
+}
+function presencePlannerChange(empId,date,store){
+  const e=db.employees.find(x=>String(x.id)===String(empId));
+  const status=document.getElementById('prstatus_'+empId+'_'+date);
+  if(!e||!status)return;
+  if(!store){status.textContent='';return}
+  status.textContent=store===e.negozio?'BASE':'↔ '+storeNameOf(store);
+}
+function presenceCycleStore(empId,date){
+  const e=db.employees.find(x=>String(x.id)===String(empId));
+  const select=document.getElementById('pr_'+empId+'_'+date);
+  if(!e||!select)return;
+  const scope=document.getElementById('genStore')?.value;
+  const stores=(scope?[scope]:shiftStores()).filter(s=>eligibleForStore(e,s));
+  if(!stores.length){alert('Nessun altro punto vendita autorizzato per questo lavoratore.');return}
+  const i=stores.indexOf(select.value);
+  select.value=stores[(i+1)%stores.length];
+  presencePlannerChange(empId,date,select.value);
+}
+function autoGeneratePresence(){
+  const week=shiftWeekKey(document.getElementById('genWeek')?.value||todayDate()),only=document.getElementById('genStore')?.value,stores=only?[only]:shiftStores(),dates=shiftWeekDates(week);
+  const workers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false).sort((a,b)=>(a.cognome+' '+a.nome).localeCompare(b.cognome+' '+b.nome,'it'));
+  const coverage={},chosen={},skipped={rest:0,absence:0,closed:0,sunday:0,comp:0};
+  dates.forEach(d=>stores.forEach(s=>coverage[s+'|'+d]=0));
+  const dayNo=date=>{const j=new Date(date+'T12:00:00').getDay();return j===0?6:j-1};
+  const isBlocked=(e,date)=>{
+    const d=dayNo(date);
+    if((e.riposiFissi||[]).includes(String(d)))return 'rest';
+    if(approvedAbsence(e.id,date))return 'absence';
+    if(d===6&&!sundayCanWork(e,date))return 'sunday';
+    return '';
+  };
+  const openStores=(e,date)=>{
+    return stores.filter(s=>eligibleForStore(e,s)).filter(s=>{const h=storeDay(s,date);return h&&!h.closed;});
+  };
+  const pickStore=(e,date)=>{
+    const candidates=openStores(e,date);
+    if(!candidates.length)return null;
+    const base=candidates.find(s=>s===e.negozio);
+    if(base)return base;
+    return candidates.slice().sort((a,b)=>(coverage[a+'|'+date]||0)-(coverage[b+'|'+date]||0))[0];
+  };
+  const setPresence=(e,date,store)=>{
+    const el=document.getElementById('pr_'+e.id+'_'+date);
+    if(!el||!store)return false;
+    el.value=store;
+    coverage[store+'|'+date]=(coverage[store+'|'+date]||0)+1;
+    chosen[String(e.id)+':'+date]=store;
+    return true;
+  };
+  for(const e of workers){
+    const targetDays=Math.min(6,Math.max(1,Math.ceil((Number(e.ore)||40)/8)));
+    const fixed=new Set((e.riposiFissi||[]).map(String));
+    const candidates=[];
+    for(const date of dates){
+      const blocked=isBlocked(e,date);
+      if(blocked){skipped[blocked]++;continue}
+      const store=pickStore(e,date);
+      if(!store){skipped.closed++;continue}
+      const d=dayNo(date);
+      candidates.push({date,store,d,sunday:d===6});
+    }
+    const weekdays=candidates.filter(x=>!x.sunday);
+    const sunday=candidates.find(x=>x.sunday);
+    const selected=[];
+    const compOptions=(e.compensativi||[]).map(String).filter(x=>!fixed.has(x)).map(Number).filter(n=>n>=0&&n<=5);
+    const chooseCompDay=()=>{
+      const possible=weekdays.filter(x=>compOptions.includes(x.d)&&!selected.some(y=>y.date===x.date));
+      return possible.sort((a,b)=>a.d-b.d)[0]||null;
+    };
+    let compDay=null;
+    // La domenica entra automaticamente solo se serve per raggiungere i giorni
+    // contrattuali; se viene scelta, un eventuale riposo compensativo viene riservato.
+    if(targetDays>weekdays.length&&sunday){
+      compDay=chooseCompDay();
+      if(compDay)skipped.comp++;
+      const pool=weekdays.filter(x=>!compDay||x.date!==compDay.date);
+      selected.push(...pool.slice(0,Math.max(0,targetDays-1)));
+      if(selected.length<targetDays)selected.push(sunday);
+    }else{
+      // Per i contratti fino a 40h si privilegiano i giorni feriali; la domenica
+      // viene usata se non ci sono abbastanza giorni lavorabili.
+      selected.push(...weekdays.slice(0,targetDays));
+      if(selected.length<targetDays&&sunday){
+        compDay=chooseCompDay();
+        if(compDay)selected.splice(selected.findIndex(x=>x.date===compDay.date),1);
+        if(selected.length<targetDays)selected.push(sunday);
+      }
+    }
+    // Se una domenica è stata scelta, il compensativo deve restare libero.
+    if(sunday&&selected.some(x=>x.date===sunday.date)&&!compDay){
+      const possible=weekdays.filter(x=>compOptions.includes(x.d)&&!selected.some(y=>y.date===x.date));
+      compDay=possible[0]||null;
+      if(compDay)skipped.comp++;
+    }
+    selected.forEach(x=>setPresence(e,x.date,x.store));
+  }
+  const generated=Object.keys(chosen).length;
+  const autoInfo=document.getElementById('genModeInfo');
+  if(autoInfo){
+    autoInfo.innerHTML='<b>Autogenerazione completata</b><div class="muted section">'+generated+' presenze proposte. Il PWA ha escluso riposi fissi, assenze approvate, domeniche non consentite e negozi chiusi; quando viene prevista una domenica utilizza, se configurato, un riposo compensativo.</div><div class="muted">Controlla la griglia e poi premi <b>Genera settimana</b>.</div>';
+  }
+}
+function refreshGenerationMode(){
+  const mode=document.getElementById('genMode')?.value||'presence',week=shiftWeekKey(document.getElementById('genWeek')?.value||todayDate()),only=document.getElementById('genStore')?.value,stores=only?[only]:shiftStores();
+  const info=document.getElementById('genModeInfo'),box=document.getElementById('genPresenceBox');if(!info||!box)return;
+  if(mode==='presence'){
+    info.innerHTML='<b>Modalità 1 — Solo presenze</b><div class="muted section">Puoi inserire manualmente le presenze oppure usare l’autogenerazione. Il PWA considera <b>riposi fissi, riposi compensativi, assenze approvate, domeniche e negozi chiusi</b>. Gli orari restano vuoti e saranno inseriti dal Direttore.</div><button class="btn section" onclick="autoGeneratePresence()">⚙ Autogenera presenze</button>';
+    box.innerHTML=presencePlannerHtml(week,stores);
+  }else{
+    const hist=approvedHistorySummary(week,stores),has=stores.some(s=>approvedWeekHistory(week,s,12).length>0);
+    info.innerHTML='<b>Modalità 2 — Orari suggeriti automaticamente</b><div class="muted section">'+(has?'Storico approvato disponibile: '+hist+'. Il generatore userà questi turni come riferimento per proporre gli orari.':'Nessuna settimana approvata disponibile per il periodo selezionato: il generatore userà i criteri contrattuali e lo storico base Gaggiolo, senza considerare bozze come storico affidabile.')+'</div>';
+    box.innerHTML='';
+  }
+}
+function storeNameOf(id){const s=STORES.find(x=>x[0]===id);return s?s[1]:id||'—'}
+function generatePresenceWeek(week,stores,dates,replace,onlyStore){
+  const selections=[];const conflicts=[];const closed=[];const invalid=[];
+  const allWorkers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false);
+  for(const e of allWorkers)for(const date of dates){const el=document.getElementById('pr_'+e.id+'_'+date);if(!el||!el.value)continue;const store=el.value;if(!eligibleForStore(e,store)){invalid.push(e.nome+' '+e.cognome+' · '+date+' (mobilità non autorizzata)');continue}const h=storeDay(store,date);if(h&&h.closed){closed.push(storeNameOf(store)+' · '+date+' · '+e.nome+' '+e.cognome);continue}if(approvedAbsence(e.id,date)){invalid.push(e.nome+' '+e.cognome+' · '+date+' (assenza approvata)');continue}const duplicate=selections.find(x=>String(x.emp)===String(e.id)&&x.date===date);if(duplicate){conflicts.push(e.nome+' '+e.cognome+' · '+date+' (due negozi nella generazione)');continue}const existingOtherStore=db.shifts.find(x=>String(x.emp)===String(e.id)&&x.date===date&&x.type==='Turno'&&(!replace||onlyStore&&x.store!==onlyStore));if(existingOtherStore){conflicts.push(e.nome+' '+e.cognome+' · '+date+' (già assegnato a '+storeNameOf(existingOtherStore.store)+')');continue}selections.push({emp:e.id,date,store})}
+  if(conflicts.length||invalid.length||closed.length){alert('Controlla le presenze prima di generare.\n'+(conflicts.length?'Conflitti: '+conflicts.join(', ')+'\n':'')+(invalid.length?'Non consentito: '+invalid.join(', ')+'\n':'')+(closed.length?'Negozio chiuso: '+closed.join(', '):''));return false}
+  if(!selections.length){alert('Inserisci almeno una presenza in un punto vendita.');return false}
+  const wantedWeek=shiftWeekKey(week);
+  if(replace){db.shifts=db.shifts.filter(s=>!(dates.includes(s.date)&&s.type==='Turno'&&(!onlyStore||s.store===onlyStore)));}
+  for(const p of selections){db.shifts.push({id:Date.now()+Math.floor(Math.random()*1000000),emp:p.emp,date:p.date,store:p.store,in:'',out:'',breakStart:'',breakEnd:'',type:'Turno',orarioDaDefinire:true,note:'Presenza inserita · orario da definire'});}
+  for(const store of stores)weekStoreState(wantedWeek,store).status='bozza';
+  audit('Turni','Generata settimana presenze '+wantedWeek+' · '+selections.length+' presenze');save();closeModal();render();alert('Presenze generate: '+selections.length+'. Gli orari sono da definire e saranno inseriti dal Direttore.');return true;
+}
+function generateWeek(){
+  const week=shiftWeekKey(genWeek.value),onlyStore=genStore.value,dates=shiftWeekDates(week),mode=genMode.value;
+  if(!db.shiftWeeks||typeof db.shiftWeeks!=='object')db.shiftWeeks={};
+  let replace=!!genReplace.checked;
+  const stores=onlyStore?[onlyStore]:shiftStores();
+  const existingWeekShifts=db.shifts.filter(s=>dates.includes(s.date)&&(s.type==='Turno'||s.type==='Corso')&&(!onlyStore||s.store===onlyStore));
+  if(existingWeekShifts.length&&!replace){
+    if(!confirm('La settimana '+weekLabel(week)+' contiene già turni nel periodo selezionato. Vuoi sovrascriverli?'))return;
+    replace=true;
+  }
+  if(mode==='presence'){generatePresenceWeek(week,stores,dates,replace,onlyStore);return;}
+
+  // La generazione parte da zero nello scope scelto. Le eventuali ore già
+  // presenti negli altri negozi restano però conteggiate nel monte ore del lavoratore.
+  const doReplace=replace||existingWeekShifts.length>0;
+  if(doReplace){
+    db.shifts=db.shifts.filter(s=>{
+      if(!dates.includes(s.date))return true;
+      if(onlyStore)return s.store!==onlyStore;
+      return false;
+    });
+    if(!onlyStore){
+      for(const k of Object.keys(db.shiftWeeks[week]||{}))delete db.shiftWeeks[week][k];
+    }else if(db.shiftWeeks[week])delete db.shiftWeeks[week][onlyStore];
+  }
+  if(!db.shiftWeeks[week])db.shiftWeeks[week]={};
+  for(const store of stores)db.shiftWeeks[week][store]={status:'bozza'};
+
+  const allWorkers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false);
+  const eligible=Object.fromEntries(stores.map(store=>[store,allWorkers.filter(e=>eligibleForStore(e,store))]));
+  const targetOf=e=>Math.max(0,Number(e.ore)||40);
+
+  const state=Object.fromEntries(allWorkers.map(e=>{
+    const existing=db.shifts.filter(s=>String(s.emp)===String(e.id)&&dates.includes(s.date)&&s.type==='Turno');
+    return [String(e.id),{
+      assigned:existing.reduce((n,s)=>n+shiftHoursValue(s),0),
+      days:new Set(existing.map(s=>s.date)),
+      shifts:new Map(existing.map(s=>[s.date,s])),
+      open:0,close:0,workDays:existing.length,
+      compDay:null
+    }];
+  }));
+
+  const uncovered=[];
+  const warnings=[];
+  let created=0;
+
+  const dayNo=date=>{const j=new Date(date+'T12:00:00').getDay();return j===0?6:j-1};
+  const hourMin=t=>timeMin(t||'00:00');
+  const shiftStart=s=>hourMin(s?.in);
+  const shiftEnd=s=>hourMin(s?.out);
+
+  const approvedOrBlocked=(e,date)=>{
+    const d=dayNo(date);
+    if((e.riposiFissi||[]).includes(String(d)))return true;
+    if(approvedAbsence(e.id,date))return true;
+    if(d===6&&!sundayCanWork(e,date))return true;
+    return false;
+  };
+
+  const hasAdjacentRest=e=>{
+    const st=state[String(e.id)];
+    return st.workDays<6;
+  };
+
+  const rest11Ok=(e,date,tm)=>{
+    const st=state[String(e.id)];
+    for(const [d,s] of st.shifts){
+      if(d===date)continue;
+      const delta=Math.round((new Date(d+'T12:00:00')-new Date(date+'T12:00:00'))/86400000);
+      if(Math.abs(delta)!==1)continue;
+      if(delta===-1 && s.out && tm.in){
+        if(hourMin(tm.in)+1440-shiftEnd(s)<660)return false;
+      }
+      if(delta===1 && s.in && tm.out){
+        if(hourMin(s.in)+1440-shiftEnd(tm)<660)return false;
+      }
+    }
+    // Controlla anche il turno precedente/successivo già presente fuori dalla settimana.
+    for(const s of db.shifts.filter(x=>String(x.emp)===String(e.id)&&x.type==='Turno')){
+      const delta=Math.round((new Date(s.date+'T12:00:00')-new Date(date+'T12:00:00'))/86400000);
+      if(Math.abs(delta)!==1)continue;
+      if(delta===-1&&s.out&&tm.in&&hourMin(tm.in)+1440-shiftEnd(s)<660)return false;
+      if(delta===1&&s.in&&tm.out&&hourMin(s.in)+1440-shiftEnd(tm)<660)return false;
+    }
+    return true;
+  };
+
+  const canWork=(e,date)=>{
+    const st=state[String(e.id)];
+    if(approvedOrBlocked(e,date))return false;
+    if(st.days.has(date))return false;
+    if(st.assigned>=targetOf(e)-0.01)return false;
+    if(st.workDays>=6)return false;
+    // Se ha lavorato la domenica, il riposo compensativo viene riservato
+    // su uno dei giorni configurati.
+    if(st.compDay===date)return false;
+    return true;
+  };
+
+  const coverageFor=(store,date)=>{
+    return db.shifts.filter(s=>s.store===store&&s.date===date&&s.type==='Turno');
+  };
+
+  const scoreWorker=(e,store,date,kind)=>{
+    const st=state[String(e.id)],target=targetOf(e),remaining=Math.max(0,target-st.assigned);
+    const cp=continuityProfile(e,store,week);
+    const wd=new Date(date+'T12:00:00').getDay();
+    let score=0;
+    // Priorità forte alla copertura, poi distribuzione delle ore e continuità.
+    score += (st.assigned/Math.max(1,target))*12;
+    score += st.workDays*1.8;
+    score += (kind==='open'?st.open:kind==='close'?st.close:0)*4;
+    if(cp.profile.weekdays.has(wd))score-=4;
+    if(cp.profile.starts.get(wd))score-=2;
+    const sameStart=cp.profile.starts.get(wd);
+    if(sameStart&&kind==='open'&&sameStart===(storeDay(store,date)?.open||''))score-=2;
+    if(sameStart&&kind==='close'&&sameStart!==(storeDay(store,date)?.open||''))score-=1;
+    const team=coverageFor(store,date);
+    const cap=Math.max(1,Number(e.capacitaGenerale)||3);
+    score += team.length/cap;
+    score += Math.max(0,5-remaining)*0.15;
+    score += historicalFitScore(e,store,date,kind);
+    // Evita di usare sempre lo stesso lavoratore per aperture/chiusure.
+    if(kind==='open')score+=st.open*2;
+    if(kind==='close')score+=st.close*2;
+    return score;
+  };
+
+  const addShift=(e,store,date,h,kind,forcedHours)=>{
+    const st=state[String(e.id)];
+    const remaining=Math.max(0,targetOf(e)-st.assigned);
+    const wanted=Math.min(10,remaining,forcedHours==null?10:Math.max(0,forcedHours));
+    if(wanted<=0.01)return false;
+    const tm=generatedTimes(e,h,kind,wanted,date,store);
+    if(!tm||tm.worked<=0)return false;
+    if(!rest11Ok(e,date,tm))return false;
+    const x={id:Date.now()+created+Math.floor(Math.random()*1000),emp:e.id,date,store,in:tm.in,out:tm.out,breakStart:tm.breakStart||'',breakEnd:tm.breakEnd||'',type:'Turno',note:'Generato automaticamente · copertura '+(kind==='open'?'apertura':kind==='close'?'chiusura':'negozio')+' · pausa da contratto'};
+    db.shifts.push(x);created++;
+    st.assigned+=tm.worked;st.days.add(date);st.shifts.set(date,x);st.workDays++;
+    if(kind==='open')st.open++;
+    if(kind==='close')st.close++;
+    return true;
+  };
+
+  // 1) Calcola il fabbisogno giornaliero. Se apertura+chiusura superano
+  // il minimo giornaliero, il fabbisogno minimo diventa la somma dei due.
+  const requirements=[];
+  for(const date of dates)for(const store of stores){
+    const h=storeDay(store,date);
+    if(!h||h.closed)continue;
+    const minTotal=Math.max(0,Number(h.mtotal)||0);
+    const minOpen=Math.max(0,Number(h.mopen)||0);
+    const minClose=Math.max(0,Number(h.mclose)||0);
+    const required=Math.max(minTotal,minOpen+minClose);
+    requirements.push({date,store,h,minTotal,minOpen,minClose,required});
+  }
+
+  // 2) Prima copriamo i buchi strutturali del negozio. Ogni posto di
+  // apertura/chiusura viene assegnato a un lavoratore diverso quando possibile.
+  // Non si scelgono ancora le persone "per fare 40 ore": prima viene coperto il negozio.
+  const assignRequirement=(r,kind)=>{
+    const current=coverageFor(r.store,r.date);
+    const needed=kind==='open'?r.minOpen:kind==='close'?r.minClose:Math.max(0,r.required-current.length);
+    let done=0;
+    while(done<needed){
+      const candidates=eligible[r.store]
+        .filter(e=>canWork(e,r.date))
+        .filter(e=>!coverageFor(r.store,r.date).some(s=>String(s.emp)===String(e.id)))
+        .map(e=>({e,score:scoreWorker(e,r.store,r.date,kind)}))
+        .sort((a,b)=>a.score-b.score);
+      let picked=null;
+      for(const x of candidates){
+        if(addShift(x.e,r.store,r.date,r.h,kind)){picked=x.e;break}
+      }
+      if(!picked)break;
+      done++;
+    }
+    return done;
+  };
+
+  // Aperture e chiusure sono trattate come vincoli duri.
+  for(const r of requirements){
+    const openDone=assignRequirement(r,'open');
+    if(openDone<r.minOpen)uncovered.push(r.store+' '+r.date+' apertura');
+    const closeDone=assignRequirement(r,'close');
+    if(closeDone<r.minClose)uncovered.push(r.store+' '+r.date+' chiusura');
+    while(coverageFor(r.store,r.date).length<r.required){
+      if(assignRequirement(r,'middle')<=0)break;
+    }
+    if(coverageFor(r.store,r.date).length<r.required)uncovered.push(r.store+' '+r.date+' personale minimo');
+  }
+
+  // 3) Completiamo le ore contrattuali. Il lavoratore viene messo dove
+  // serve di più, mantenendo continuità con le settimane già approvate.
+  // Non può fare due negozi nello stesso giorno.
+  for(const e of allWorkers){
+    const st=state[String(e.id)],target=targetOf(e);
+    let guard=0;
+    while(st.assigned<target-0.01&&guard++<80){
+      const candidates=[];
+      for(const date of dates){
+        if(!canWork(e,date))continue;
+        for(const store of stores){
+          if(!eligibleForStore(e,store))continue;
+          const h=storeDay(store,date);if(!h||h.closed)continue;
+          const team=coverageFor(store,date);
+          const req=requirements.find(r=>r.store===store&&r.date===date);
+          const shortage=req?Math.max(0,req.required-team.length):0;
+          const closeMissing=req&&req.minClose&&!team.some(s=>s.out===h.close);
+          const openMissing=req&&req.minOpen&&!team.some(s=>s.in===h.open);
+          let kind=closeMissing?'close':openMissing?'open':'middle';
+          const cp=continuityProfile(e,store,week);
+          const wd=new Date(date+'T12:00:00').getDay();
+          let score=shortage*30+(closeMissing?20:0)+(openMissing?10:0);
+          score-=cp.profile.weekdays.has(wd)?8:0;
+          score-=cp.profile.starts.get(wd)?3:0;
+          score+=(team.length/Math.max(1,Number(e.capacitaGenerale)||3))*2;
+          score+=(st.assigned/Math.max(1,target))*10;
+          score+=st.workDays*1.5;
+          // Preferisce distribuire il monte ore su 5-6 giornate, non creare
+          // 4 ore casuali quando c'è ancora spazio per una giornata piena.
+          const remaining=target-st.assigned;
+          if(remaining>6&&kind!=='middle')score-=2;
+          candidates.push({date,store,h,kind,score,remaining});
+        }
+      }
+      candidates.sort((a,b)=>a.score-b.score||a.date.localeCompare(b.date));
+      if(!candidates.length)break;
+      let placed=false;
+      for(const p of candidates){
+        const maxDay=Math.min(10,p.remaining);
+        if(addShift(e,p.store,p.date,p.h,p.kind,maxDay)){placed=true;break}
+      }
+      if(!placed)break;
+    }
+    const delta=Math.round((target-st.assigned)*100)/100;
+    if(delta>0.01)warnings.push((e.nome||'')+' '+(e.cognome||'')+': mancano '+String(delta).replace('.',',')+' h');
+  }
+
+  // 4) Se una domenica è stata assegnata, riserviamo un vero riposo
+  // compensativo tra i giorni configurati. Se il giorno scelto è già lavorato,
+  // spostiamo quel turno su un altro giorno compatibile.
+  for(const e of allWorkers){
+    const st=state[String(e.id)];
+    const sunday=dates.find(d=>dayNo(d)===6&&st.days.has(d));
+    if(!sunday)continue;
+    const options=(e.compensativi||[]).map(String).filter(x=>!((e.riposiFissi||[]).includes(x))).map(Number);
+    if(!options.length)continue;
+    const possible=options.filter(n=>dates[n-1]?true:false).map(n=>dates.find(d=>dayNo(d)===n)).filter(Boolean);
+    let free=possible.find(d=>!st.days.has(d)&&!approvedOrBlocked(e,d));
+    if(free)st.compDay=free;
+    else{
+      // Scegliamo il giorno compensativo con il turno meno "critico".
+      const ranked=possible.filter(d=>st.days.has(d)).sort((a,b)=>{
+        const sa=st.shifts.get(a),sb=st.shifts.get(b);
+        const ra=requirements.find(r=>r.store===sa?.store&&r.date===a);
+        const rb=requirements.find(r=>r.store===sb?.store&&r.date===b);
+        return (ra?.required||0)-(rb?.required||0);
+      });
+      const removeDate=ranked[0];
+      if(removeDate){
+        const old=st.shifts.get(removeDate);
+        db.shifts=db.shifts.filter(s=>s!==old);
+        st.shifts.delete(removeDate);st.days.delete(removeDate);st.workDays--;st.assigned-=shiftHoursValue(old);
+        st.compDay=removeDate;
+        // Tentiamo di rimpiazzare la copertura con un collega.
+        const rr=requirements.find(r=>r.store===old.store&&r.date===old.date);
+        if(rr){
+          const team=coverageFor(rr.store,rr.date);
+          if(team.length<rr.required|| (rr.minClose&& !team.some(s=>s.out===rr.h.close)) || (rr.minOpen&& !team.some(s=>s.in===rr.h.open))){
+            const kind=rr.minClose&&!team.some(s=>s.out===rr.h.close)?'close':rr.minOpen&&!team.some(s=>s.in===rr.h.open)?'open':'middle';
+            const repl=eligible[rr.store].filter(x=>String(x.id)!==String(e.id)&&canWork(x,removeDate)&&!team.some(s=>String(s.emp)===String(x.id))).sort((x,y)=>scoreWorker(x,rr.store,removeDate,kind)-scoreWorker(y,rr.store,removeDate,kind));
+            for(const x of repl)if(addShift(x,rr.store,removeDate,rr.h,kind))break;
+          }
+        }
+      }
+    }
+  }
+
+  // 5) Verifica finale: niente turni fuori apertura, niente chiusure mancanti,
+  // niente aperture mancanti, niente superamento del contratto e minimo giornaliero.
+  for(const r of requirements){
+    const ds=coverageFor(r.store,r.date);
+    if(ds.length<r.required)uncovered.push(r.store+' '+r.date+' personale minimo');
+    if(r.minClose&&!ds.some(s=>s.out===r.h.close))uncovered.push(r.store+' '+r.date+' chiusura');
+    if(r.minOpen&&!ds.some(s=>s.in===r.h.open))uncovered.push(r.store+' '+r.date+' apertura');
+    for(const s of ds){
+      const h=r.h;
+      if(s.in<h.open||s.out>h.close)warnings.push(r.store+' '+r.date+' turno fuori orario');
+      if(shiftHoursValue(s)>10.01)warnings.push(r.store+' '+r.date+' oltre 10h '+empName(s.emp));
+    }
+  }
+  for(const e of allWorkers){
+    const st=state[String(e.id)];
+    if(st.assigned>targetOf(e)+0.01)warnings.push((e.nome||'')+' '+(e.cognome||'')+': oltre contratto');
+  }
+
+  // 6) Corsi: non sovrascrivono mai un turno o un'assenza.
+  for(const e of allWorkers)for(const date of dates){
+    const co=courseOnDate(e.id,date);
+    if(!co||employeeHasDay(e,date))continue;
+    const store=(e.negozio&&stores.includes(e.negozio))?e.negozio:(stores.find(s=>eligibleForStore(e,s))||stores[0]);
+    if(store)db.shifts.push({id:Date.now()+created,emp:e.id,date,store,in:'',out:'',breakStart:'',breakEnd:'',type:'Corso',note:co.titolo||'Corso'}),created++;
+  }
+
+  const msg='Generata '+weekLabel(week)+' · '+created+' elementi · copertura negozi, ore contrattuali, pause, riposi e continuità.';
+  audit('Turni',msg);
+  save();closeModal();render();
+  if(uncovered.length||warnings.length){
+    alert('Settimana generata con segnalazioni.\n\n'+
+      (uncovered.length?'Coperture da verificare: '+uncovered.slice(0,10).join(', ')+(uncovered.length>10?' …':'')+'\n':'')+
+      (warnings.length?'Altre segnalazioni: '+warnings.slice(0,10).join(', ')+(warnings.length>10?' …':''):''));
+  }else{
+    alert('Settimana generata correttamente: copertura apertura/chiusura, ore contrattuali, pause e riposi verificati.');
+  }
+}
+function validateWeekRestRequirements(week){const dates=shiftWeekDates(week),issues=[],workers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false);for(const e of workers){const fixed=(e.riposiFissi||[]).map(String);for(const dayNo of fixed){const date=dates[Number(dayNo)];if(!date)continue;const work=weekShiftOnDate(e,date);if(work)issues.push(e.nome+' '+e.cognome+' · RIPOSO fisso '+date+' ma risulta un turno in '+storeNameOf(work.store))}const sunday=dates.find(d=>isSunday(d)),sundayShift=sunday?weekShiftOnDate(e,sunday):null;if(sundayShift){const comp=(e.compensativi||[]).map(String).filter(x=>!fixed.includes(x));if(!comp.length)issues.push(e.nome+' '+e.cognome+' · domenica lavorata ma nessun RIP. COMP. configurato');else{const ok=comp.some(dayNo=>{const date=dates[Number(dayNo)];return date&&!weekShiftOnDate(e,date)&&!approvedAbsence(e.id,date)});if(!ok)issues.push(e.nome+' '+e.cognome+' · domenica '+sunday+' lavorata ma RIP. COMP. non garantito')}}const workDates=dates.filter(d=>weekShiftOnDate(e,d));if(workDates.length>=7)issues.push(e.nome+' '+e.cognome+' · nessun giorno di riposo nella settimana');const hours=weekTotalHours(e,week,'');if(hours<50){const homeDates=dates.filter(d=>!weekShiftOnDate(e,d));if(!sunday||sundayShift||homeDates.length<2)issues.push(e.nome+' '+e.cognome+' · '+String(hours).replace('.',',')+' ore: servono almeno 2 giorni a casa, con la domenica inclusa')}}return issues}
+function sendWeekToDirectors(week){if(user.ruolo!==3)return;const issues=validateWeekRestRequirements(week),nl=String.fromCharCode(10);if(issues.length){const msg='ATTENZIONE — controllo riposi '+weekLabel(week)+nl+nl+'Sono state rilevate '+issues.length+' anomalie:'+nl+nl+issues.slice(0,20).map((x,i)=>(i+1)+'. '+x).join(nl)+(issues.length>20?nl+'... altre anomalie':'')+nl+nl+'Puoi annullare l’invio e correggere i turni, oppure inviare comunque la settimana ai Direttori.';if(!confirm(msg))return}else{if(!confirm('Controllo riposi completato: nessuna anomalia rilevata. Inviare la settimana '+weekLabel(week)+' ai Direttori?'))return}for(const s of shiftStores())weekStoreState(week,s).status='inviato_direttore';db.notifications=db.notifications||[];for(const e of db.employees.filter(x=>x.ruolo===2))db.notifications.push({id:Date.now()+Math.random(),emp:e.id,date:new Date().toISOString(),read:false,text:'Turni '+weekLabel(week)+' inviati per il controllo del tuo negozio.'});audit('Turni','Invio settimana '+week+' ai Direttori'+(issues.length?' · con avviso riposi':''));save();render()}
+function approveStoreWeek(week,store){if(user.ruolo!==2||String(store)!==String(user.negozio)||weekStoreStatus(week,store)!=='inviato_direttore')return;if(!confirm('Approvare i turni del tuo negozio per '+weekLabel(week)+'?'))return;weekStoreState(week,store).status='approvata_direttore';audit('Turni','Approvazione Direttore '+store+' · '+week);save();render()}
+function sendWeeksToOwner(week){if(user.ruolo!==3||!allStoresDirectorApproved(week))return;for(const s of shiftStores())weekStoreState(week,s).status='inviato_titolare';db.notifications=db.notifications||[];db.notifications.push({id:Date.now(),emp:user.id,date:new Date().toISOString(),read:false,text:'Tutte le settimane '+weekLabel(week)+' sono state approvate dai Direttori e sono pronte per la tua approvazione.'});audit('Turni','Invio tutte le settimane '+week+' al Titolare');save();render()}
+function approveAllWeeksByOwner(week){if(user.ruolo!==3||!shiftStores().every(s=>weekStoreStatus(week,s)==='inviato_titolare'))return;if(!confirm('Approvare tutte le settimane dei negozi per '+weekLabel(week)+'?'))return;for(const s of shiftStores())weekStoreState(week,s).status='approvata_titolare';db.notifications=db.notifications||[];for(const e of db.employees.filter(x=>x.ruolo===2))db.notifications.push({id:Date.now()+Math.random(),emp:e.id,date:new Date().toISOString(),read:false,text:'Turni '+weekLabel(week)+' approvati dal Titolare. Ora puoi stamparli.'});audit('Turni','Approvazione Titolare '+week);save();render()}
+function printShiftWeek(week){if(user.ruolo<2)return;const store=user.ruolo===2?user.negozio:null;if(user.ruolo===2&&weekStoreStatus(week,store)!=='approvata_titolare'){alert('Il Titolare deve prima approvare i turni del tuo negozio.');return}if(user.ruolo===3&&!allStoresOwnerApproved(week)){alert('Prima devono essere approvate tutte le settimane dei negozi.');return}const dates=shiftWeekDates(week),list=db.shifts.filter(s=>dates.includes(s.date)&&(!store||s.store===store));const emps=[...new Map(list.map(s=>[String(s.emp),s.emp])).values()].map(id=>db.employees.find(e=>String(e.id)===String(id))).filter(Boolean);const rows=emps.map(e=>'<tr><td><b>'+esc(e.cognome+' '+e.nome)+'</b></td>'+dates.map(d=>'<td>'+list.filter(s=>String(s.emp)===String(e.id)&&s.date===d).map(s=>esc((s.type==='Turno'?(s.in||'')+'–'+(s.out||''):s.type)+(s.note?' · '+s.note:''))).join('<br>')+'</td>').join('')+'</tr>').join('');const head=dates.map(d=>{const x=new Date(d+'T12:00:00');return '<th>'+['Dom','Lun','Mar','Mer','Gio','Ven','Sab'][x.getDay()]+'<br>'+d.slice(8,10)+'/'+d.slice(5,7)+'</th>'}).join('');const html='<!doctype html><html><head><meta charset="utf-8"><title>Turni '+weekLabel(week)+'</title><style>body{font-family:Arial;margin:24px;color:#111}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #bbb;padding:7px;text-align:center;vertical-align:top}th:first-child,td:first-child{text-align:left;min-width:170px}th{background:#eee}</style></head><body><h1>B+ Gestionale HR — Turni</h1><p>Settimana '+weekLabel(week)+(store?' · Negozio '+esc(store):'')+' · Approvata dal Titolare</p><table><tr><th>Lavoratore</th>'+head+'</tr>'+(rows||'<tr><td colspan="8">Nessun turno</td></tr>')+'</table></body></html>';const w=window.open('','_blank');if(!w){alert('Consenti i popup per la stampa.');return}w.document.write(html);w.document.close();setTimeout(()=>w.print(),250);audit('Turni','Stampa settimana '+week+(store?' · '+store:''));save()}
+function newShiftForCell(empId,date,store){
+  const e=db.employees.find(x=>String(x.id)===String(empId));
+  if(!e)return;
+  if(user.ruolo===2&&String(store)!==String(user.negozio))return;
+  const x={id:Date.now()+Math.floor(Math.random()*100000),emp:e.id,date,store,in:'08:30',out:'17:30',breakStart:'',breakEnd:'',type:'Turno',note:''};
+  window._shift=x;
+  openModal('Nuovo turno','<div class="form"><label>Lavoratore<select id="shEmp">'+db.employees.filter(e=>user.ruolo===3||e.negozio===user.negozio).map(e=>'<option value="'+e.id+'" '+(String(x.emp)===String(e.id)?'selected':'')+'>'+esc(e.nome+' '+e.cognome)+'</option>').join('')+'</select></label><label>Data<input id="shDate" type="date" value="'+x.date+'"></label><label>Punto vendita<select id="shStore">'+STORES.filter(st=>user.ruolo===3||st[0]===user.negozio).map(st=>'<option value="'+st[0]+'" '+(x.store===st[0]?'selected':'')+'>'+st[1]+'</option>').join('')+'</select></label><label>Entrata<input id="shIn" type="time" value="'+x.in+'"></label><label>Pausa dalle<input id="shBreakStart" type="time" value=""></label><label>Pausa alle<input id="shBreakEnd" type="time" value=""></label><label>Uscita<input id="shOut" type="time" value="'+x.out+'"></label><label>Tipo<select id="shType">'+['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio','Corso'].map(t=>'<option '+(x.type===t?'selected':'')+'>'+t+'</option>').join('')+'</select></label><label style="grid-column:1/-1">Note<textarea id="shNote"></textarea></label></div><div class="actions section"><button class="btn green" onclick="saveShift()">Salva turno</button></div>');
+}
+function shiftModal(id){let x=id?db.shifts.find(s=>String(s.id)===String(id)):{id:Date.now(),emp:'',date:todayDate(),store:user.negozio||'GAG',in:'08:30',out:'17:30',type:'Turno',note:''};if(user.ruolo===2&&(x.store!==user.negozio))return;window._shift=x;openModal(id?'Modifica turno':'Nuovo turno','<div class="form"><label>Lavoratore<select id="shEmp">'+db.employees.filter(e=>user.ruolo===3||e.negozio===user.negozio).map(e=>'<option value="'+e.id+'" '+(String(x.emp)===String(e.id)?'selected':'')+'>'+esc(e.nome+' '+e.cognome)+'</option>').join('')+'</select></label><label>Data<input id="shDate" type="date" value="'+x.date+'"></label><label>Punto vendita<select id="shStore">'+STORES.filter(st=>user.ruolo===3||st[0]===user.negozio).map(st=>'<option value="'+st[0]+'" '+(x.store===st[0]?'selected':'')+'>'+st[1]+'</option>').join('')+'</select></label><label>Entrata<input id="shIn" type="time" value="'+(x.in||'')+'"></label><label>Pausa dalle<input id="shBreakStart" type="time" value="'+(x.breakStart||'')+'"></label><label>Pausa alle<input id="shBreakEnd" type="time" value="'+(x.breakEnd||'')+'"></label><label>Uscita<input id="shOut" type="time" value="'+(x.out||'')+'"></label><label>Tipo<select id="shType">'+['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio','Corso'].map(t=>'<option '+(x.type===t?'selected':'')+'>'+t+'</option>').join('')+'</select></label><label style="grid-column:1/-1">Note<textarea id="shNote">'+esc(x.note||'')+'</textarea></label></div><div class="actions section"><button class="btn green" onclick="saveShift()">Salva turno</button></div>')}
+function saveShift(){
+  let x=window._shift;
+  if(user.ruolo===2&&x.store!==user.negozio)return;
+  x.emp=shEmp.value;x.date=shDate.value;x.store=shStore.value;x.in=shIn.value;x.breakStart=shBreakStart.value;x.breakEnd=shBreakEnd.value;x.out=shOut.value;x.type=shType.value;x.note=shNote.value;
+  if(x.type==='Turno')db.shifts=db.shifts.filter(s=>String(s.emp)!==String(x.emp)||s.date!==x.date||s.type!=='Turno'||String(s.id)===String(x.id));
+  let i=db.shifts.findIndex(s=>String(s.id)===String(x.id));
+  if(i<0)db.shifts.push(x);else db.shifts[i]=x;
+  const w=shiftWeekKey(x.date),st=weekStoreState(w,x.store);
+  if(user.ruolo===2)st.status='inviato_direttore';else st.status='bozza';
+  audit('Turno','Modificato '+x.date+' · '+x.store+' · '+empName(x.emp));save();closeModal();render()
+}
+function isoWeekNumber(date){
+  const d=new Date(date+'T12:00:00');
+  const day=d.getDay()||7;
+  d.setDate(d.getDate()+4-day);
+  const y=d.getFullYear();
+  const start=new Date(y,0,1);
+  return Math.ceil((((d-start)/86400000)+1)/7);
+}
+function weekWorkedHours(emp,week,store){
+  return weekTotalHours(emp,week,store);
+}
+function recoveryBalanceBeforeWeek(emp,week){
+  const e=typeof emp==='object'?emp:db.employees.find(x=>String(x.id)===String(emp));
+  if(!e)return 0;
+  const first=shiftWeekDates(week)[0];
+  const weeks=new Set(db.shifts.filter(s=>String(s.emp)===String(e.id)&&s.date<first).map(s=>shiftWeekKey(s.date)));
+  for(const a of db.absences.filter(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.tipo==='Ferie'&&a.a<first)){weeks.add(shiftWeekKey(a.da));weeks.add(shiftWeekKey(a.a))}
+  let total=Number(e.oreRecuperoBase)||0;
+  for(const w of weeks){
+    if(fullWeekFerie(e,w))continue;
+    const worked=db.shifts.filter(s=>String(s.emp)===String(e.id)&&shiftWeekKey(s.date)===w&&s.type==='Turno').reduce((n,s)=>n+shiftHoursValue(s),0);
+    const ferie=ferieHoursForWeek(e,w);
+    const corso=courseHoursForWeek(e,w);
+    const hasActivity=worked>0||ferie>0||corso>0||db.absences.some(a=>String(a.emp)===String(e.id)&&a.stato==='approvato'&&a.da<=shiftWeekDates(w)[6]&&a.a>=shiftWeekDates(w)[0]);
+    if(hasActivity)total+=(Number(e.ore)||40)-(worked+ferie+corso);
+  }
+  return Math.round(total*100)/100;
+}
+function shiftVisualCell(shift){
+  if(!shift)return '';
+  if(shift.type&&shift.type!=='Turno'){
+    const label=shift.type==='Ferie'?'FER':shift.type==='Corso'?'CORSO':shift.type==='Riposo'?'RIPOSO':shift.type==='Riposo Comp.'?'RIP. COMP.':shift.type;
+    return '<div class="sp-special">'+esc(label)+'</div>';
+  }
+  if(shift.orarioDaDefinire||(!shift.in&&!shift.out))return '<div class="sp-presence">PRESENZA<br><small>ORARIO DA DEFINIRE</small></div>';
+  const a=shift.in||'',b=shift.breakStart||'',c=shift.breakEnd||'',d=shift.out||'';
+  return '<div class="sp-times"><span>'+esc(a)+'</span><span>'+esc(b)+'</span><span>'+esc(c)+'</span><span>'+esc(d)+'</span></div>';
+}
+function shifts(){
+  const selected=document.getElementById('shiftWeek')?.value||shiftWeekKey(todayDate());
+  const stores=user.ruolo===2?[user.negozio]:shiftStores();
+  const dates=shiftWeekDates(selected);
+  const weekNo=isoWeekNumber(selected);
+  let controls='<div class="actions"><label class="muted">Settimana<input id="shiftWeek" type="date" value="'+selected+'" onchange="render()" style="margin-left:6px;background:#292d33;color:#fff;border:1px solid #454a52;border-radius:8px;padding:10px"></label>';
+  if(user.ruolo===3){
+    controls+='<button class="btn" onclick="generateWeekModal()">⚙ Genera settimana</button><button class="btn" onclick="importWeekExcelModal()">📥 Importa Excel</button><button class="btn danger" onclick="resetWeek(&quot;'+selected+'&quot;)">↺ Reset settimana</button><button class="btn" onclick="sendWeekToDirectors(&quot;'+selected+'&quot;)">📨 Invia ai Direttori</button>';
+    if(allStoresDirectorApproved(selected))controls+='<button class="btn" onclick="sendWeeksToOwner(&quot;'+selected+'&quot;)">📨 Invia tutte al Titolare</button>';
+    if(shiftStores().every(s=>weekStoreStatus(selected,s)==='inviato_titolare'))controls+='<button class="btn green" onclick="approveAllWeeksByOwner(&quot;'+selected+'&quot;)">✓ Approva tutte le settimane</button>';
+  }else if(user.ruolo===2){
+    const st=weekStoreStatus(selected,user.negozio);
+    if(st==='inviato_direttore')controls+='<button class="btn green" onclick="approveStoreWeek(&quot;'+selected+'&quot;,&quot;'+user.negozio+'&quot;)">✓ Approva settimana del negozio</button>';
+    if(st==='approvata_titolare')controls+='<button class="btn secondary" onclick="printShiftWeek(&quot;'+selected+'&quot;)">🖨 Stampa turni</button>';
+    if(st==='inviato_direttore')controls+='<button class="btn" onclick="shiftModal()">+ Modifica turno</button>';
+  }
+  controls+='</div><div class="card section"><b>Settimana '+weekLabel(selected)+'</b><div class="muted">'+(user.ruolo===3?'Genera → invia ai Direttori → controllo/modifica negozio → approvazione Direttore → invio al Titolare → approvazione Titolare':'Controlla/modifica il tuo negozio → approva → attende approvazione Titolare')+'</div></div>';
+
+  const blocks=stores.map(store=>{
+    const storeObj=db.stores.find(s=>s.id===store);
+    const storeName=storeObj?.name||store;
+    const workers=db.employees.filter(e=>e.stato==='attivo'&&e.inTurni!==false&&(e.negozio===store||(Array.isArray(e.mobilita)&&e.mobilita.includes(store))||db.shifts.some(s=>s.store===store&&String(s.emp)===String(e.id)&&dates.includes(s.date)))).sort((a,b)=>(a.cognome+' '+a.nome).localeCompare(b.cognome+' '+b.nome,'it'));
+    const rows=workers.map(e=>{
+      const prev=recoveryBalanceBeforeWeek(e,selected);
+      const hours=weekWorkedHours(e,selected,store);
+      const contract=Number(e.ore)||40;
+      const saldo=Math.round((prev+hours-contract)*100)/100;
+      const showTotals=e.negozio===store;
+      const dayCells=dates.map(date=>{
+        const h=storeDay(store,date);
+        const shiftsForDay=db.shifts.filter(s=>String(s.emp)===String(e.id)&&s.store===store&&s.date===date);
+        const sh=shiftsForDay.find(s=>s.type==='Turno')||shiftsForDay[0];
+        const cross=crossStoreShiftInfo(e,date,store);
+        const restKind=!sh?weekRestKind(e,selected,date,store):'';
+        const closed=!h||h.closed;
+        const cellClass=(closed?'sp-day sp-closed':'sp-day')+(sh&&cross?' sp-conflict':'');
+        let inner=sh?shiftVisualCell(sh):'';
+        if(!sh&&restKind)inner='<div class="sp-rest '+(restKind==='comp'?'comp':'')+'" onclick="editRestDay('+e.id+',&quot;'+date+'&quot;,&quot;'+store+'&quot;,&quot;'+restKind+'&quot;)" title="Modifica '+restLabel(restKind)+'">'+restLabel(restKind)+'</div>';
+        if(cross){const crossLabel='↔ '+cross.names.join(' · ');inner+='<div class="sp-cross-store" title="Il lavoratore è già assegnato a '+esc(cross.names.join(', '))+'">'+esc(crossLabel)+'</div>'}
+        const target=sh||cross?.shifts?.[0];
+        const clickable=target&&target.id!=null?' onclick="shiftModal(&quot;'+target.id+'&quot;)" title="'+(sh?'Apri turno':'Apri turno assegnato nell’altro negozio')+'"':(!closed&&!restKind&&!cross?' onclick="newShiftForCell('+e.id+',&quot;'+date+'&quot;,&quot;'+store+'&quot;)" title="Inserisci turno"':'');
+        return '<td class="'+cellClass+'"'+clickable+'>'+inner+'</td>';
+      }).join('');
+      const mobility=e.mobilita||[],mobileTo=mobility.filter(s=>s!==e.negozio);return '<tr><td class="sp-contract">'+contract.toFixed(0)+'</td><td class="sp-note"><div class="sp-worker-name"><span class="sp-worker-main"><span class="sp-worker-icon">👤</span><b>'+esc(e.nome+' '+e.cognome)+'</b></span>'+(showTotals?'<span class="sp-worker-totals"><span>Ore <b>'+hours.toFixed(2).replace('.',',')+'</b></span><span>Saldo <b class="sp-balance '+(saldo<0?'neg':saldo>0?'pos':'')+'">'+(saldo>0?'+':'')+String(saldo).replace('.',',')+'</b></span></span>':'')+(mobileTo.includes(store)?'<span class="sp-mobility">↔ MOBILITÀ</span>':'')+'</div>'+(e.note?'<div class="sp-note-sub">'+esc(e.note)+'</div>':'')+'</td>'+dayCells+'</tr>';
+    }).join('');
+    const head=dates.map(date=>{
+      const x=new Date(date+'T12:00:00');
+      const wd=DAYS[x.getDay()===0?6:x.getDay()-1];
+      return '<th class="sp-date"><b>'+wd.toLowerCase()+'</b><span>'+date.slice(8,10)+'/'+date.slice(5,7)+'</span><small>PV</small></th>';
+    }).join('');
+    return '<div class="shift-plan section"><div class="sp-title">'+esc(storeName.toUpperCase())+' <span>SETTIMANA N.'+weekNo+'</span></div><div class="tablewrap"><table class="sp-table"><thead><tr><th class="sp-h1">ORE SETTIMANALI A CONTRATTO</th><th class="sp-h2">LAVORATORE / NOTE / ORE / SALDO</th>'+head+'</tr></thead><tbody>'+(rows||'<tr><td colspan="'+(2+dates.length)+'" class="sp-empty">Nessun lavoratore/turno per questo punto vendita.</td></tr>')+'</tbody></table></div></div>';
+  }).join('');
+  return controls+blocks;
+}
+function board(){const now=todayDate();let list=db.board.filter(b=>(!b.exp||b.exp>=now)&&(b.target==='all'||b.target===user.negozio||b.target==='u:'+user.id||user.ruolo>=2));return '<div class="actions">'+(user.ruolo>=2?'<button class="btn" onclick="boardModal()">+ Nuova comunicazione</button>':'')+'</div>'+list.map(b=>'<div class="card section"><h3>'+esc(b.title)+'</h3><div style="white-space:pre-wrap">'+esc(b.body)+'</div><div class="muted section">'+new Date(b.at).toLocaleString('it-IT')+(b.exp?' · fino al '+b.exp:'')+'</div></div>').join('')||'<div class="card section">Nessuna comunicazione.</div>'}
+function auditPage(){if(user.ruolo!==3)return '<div class="card">Accesso non disponibile.</div>';return '<div class="card"><h3>Audit log</h3><div class="tablewrap"><table class="table"><tr><th>Data</th><th>Utente</th><th>Azione</th><th>Dettaglio</th></tr>'+db.audit.map(a=>'<tr><td>'+new Date(a.at).toLocaleString('it-IT')+'</td><td>'+esc(a.name)+'</td><td>'+esc(a.action)+'</td><td>'+esc(a.detail)+'</td></tr>').join('')+'</table></div></div>'}
+function exportCsv(kind){let rows=[];if(kind==='presenze'){rows=[['Data','Lavoratore','Negozio','Entrata','Uscita','Pausa','Ore'],...db.attendance.map(a=>[a.date,empName(a.emp),a.store,a.in,a.out,a.breakMin,workedHours(a)])]}else if(kind==='assenze'){rows=[['Lavoratore','Tipo','Dal','Al','Stato','Note'],...db.absences.map(a=>[empName(a.emp),a.tipo,a.da,a.a,a.stato,a.note||''])]}else{rows=[['Lavoratore','Corso','Categoria','Data','Scadenza','Stato'],...db.courses.map(c=>[empName(c.emp),c.titolo,c.categoria,c.data,c.scadenza,courseState(c)])]}const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='bplus-'+kind+'-'+todayDate()+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(u),500);audit('Export','CSV '+kind);save()}
+function printReport(){const old=document.body.innerHTML;const rows=db.attendance.map(a=>'<tr><td>'+a.date+'</td><td>'+empName(a.emp)+'</td><td>'+a.in+'</td><td>'+a.out+'</td><td>'+workedHours(a)+'</td></tr>').join('');document.body.innerHTML='<div style="font-family:Arial;padding:30px;color:#111"><h1>B+ Gestionale HR</h1><h2>Report presenze</h2><table border="1" cellpadding="6" cellspacing="0"><tr><th>Data</th><th>Lavoratore</th><th>Entrata</th><th>Uscita</th><th>Ore</th></tr>'+rows+'</table></div>';window.print();location.reload()}
+function reports(){return '<div class="grid"><div class="card"><b>Presenze</b><div class="stat">'+db.attendance.length+'</div></div><div class="card"><b>Assenze</b><div class="stat">'+db.absences.length+'</div></div><div class="card"><b>Formazione</b><div class="stat">'+db.courses.length+'</div></div><div class="card"><b>Turni</b><div class="stat">'+db.shifts.length+'</div></div></div><div class="section card"><h3>Esportazioni</h3><div class="actions"><button class="btn" onclick="exportCsv(\'presenze\')">Presenze CSV / Excel</button><button class="btn secondary" onclick="exportCsv(\'assenze\')">Assenze CSV / Excel</button><button class="btn secondary" onclick="exportCsv(\'corsi\')">Corsi CSV / Excel</button><button class="btn green" onclick="printReport()">Stampa / PDF</button></div></div>'}
+function backupPage(){if(user.ruolo!==3)return '<div class="card">Accesso non disponibile.</div>';return '<div class="card"><h3>Backup e sincronizzazione</h3><p>Il gestionale salva i dati sul dispositivo. Puoi creare un backup completo e ripristinarlo su un altro dispositivo.</p><div class="actions"><button class="btn" onclick="downloadBackup()">Scarica backup</button><label class="btn secondary" style="display:inline-flex;align-items:center;cursor:pointer">Ripristina backup<input type="file" accept=".json,application/json" style="display:none" onchange="restoreBackup(this.files[0])"></label></div><p class="muted section">Il backup comprende turni, ferie/permessi, corsi, bacheca, calendario, notifiche e configurazione.</p></div>'}
+function downloadBackup(){const payload={version:4,exportedAt:new Date().toISOString(),db};const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='bplus-backup-'+todayDate()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),500);audit('Backup','Esportazione completa');save()}
+function restoreBackup(file){if(!file)return;const rd=new FileReader();rd.onload=()=>{try{const x=JSON.parse(rd.result);if(!x.db||!x.version)throw Error();if(!confirm('Il ripristino sostituirà i dati presenti su questo dispositivo. Continuare?'))return;db=x.db;for(const k of Object.keys(defaults))if(!db[k])db[k]=defaults[k];audit('Backup','Ripristino completo');save();render();alert('Backup ripristinato.')}catch(e){alert('Backup non valido.')}};rd.readAsText(file)}
+function render(){let h=page==='dashboard'?dashboard():page==='employees'?employees():page==='shifts'?shifts():page==='history'?history():page==='calendar'?calendar():page==='absences'?absences():page==='stores'?stores():page==='courses'?courses():page==='board'?board():page==='reports'?reports():page==='notifications'?notifications():page==='audit'?auditPage():page==='backup'?backupPage():profile();view.innerHTML=h}buildNav();render();
+</script></body></html>
