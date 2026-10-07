@@ -13,7 +13,7 @@
 .sp-day{padding:0!important;background:#fff;cursor:pointer}.sp-day:hover{background:#f4f4f4}.sp-closed{background:#666!important;cursor:default}
 .sp-times{display:grid;grid-template-columns:repeat(4,1fr);min-height:28px}.sp-times span{display:flex;align-items:center;justify-content:center;border-right:1px solid #999;font-size:10px;font-style:italic}.sp-times span:last-child{border-right:0}.sp-special{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:800;font-style:italic}.sp-rest{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px;background:#eef2f6;color:#273746;border:1px solid #cbd5df;border-radius:4px;cursor:pointer}.sp-rest.comp{background:#fff2d8;color:#8a5a00;border-color:#e5c477}.sp-presence{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9px;background:#e9eef5;color:#17385f}.sp-mobility{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:10px;background:#d9e9ff;color:#174a82;font-size:9px;font-weight:800}.sp-empty{padding:14px!important;color:#666;background:#f7f7f7}.sp-cross-store{min-height:28px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:9px;background:#e7f0fb;color:#174a82}.sp-conflict{background:#ffe1e1!important;color:#9b1c1c!important}.pr-cell{padding:5px!important}.pr-cell-tools{display:flex;gap:4px;align-items:center;justify-content:center}.pr-cell select{min-width:115px;background:#292d33;color:#fff;border:1px solid #454a52;border-radius:7px;padding:7px}.pr-move-btn{min-height:34px!important;padding:5px 8px;border:1px solid #4c80b5;background:#d9e9ff;color:#174a82;border-radius:7px;font-weight:900}.pr-status{min-height:14px;margin-top:3px;font-size:9px;font-weight:800;color:#174a82}
 @media(max-width:900px){.sp-table{min-width:1100px}.sp-date{width:86px}.sp-note{width:125px}}
-</style></head><body><aside id="side" class="side"><div class="brand"><div class="simple-logo" aria-label="B+">B+</div><span>B+ Gestionale HR</span></div><div id="who" class="who"></div><nav id="nav" class="nav"></nav></aside><main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">Versione HR completa</div></div><div class="actions"><button class="btn secondary" onclick="toggleMenu()">☰</button><button class="btn" onclick="logout()">Esci</button></div></header><section id="view"></section></main><nav id="bottom" class="bottom"></nav><div id="modal" class="modal"><div class="dialog"><div class="top"><h2 id="mtitle"></h2><button class="btn secondary" onclick="closeModal()">Chiudi</button></div><div id="mbody"></div></div></div><script>
+</style><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script></head><body><aside id="side" class="side"><div class="brand"><div class="simple-logo" aria-label="B+">B+</div><span>B+ Gestionale HR</span></div><div id="who" class="who"></div><nav id="nav" class="nav"></nav></aside><main class="main"><header class="top"><div><h1 id="title">Dashboard</h1><div class="muted">Versione HR completa</div></div><div class="actions"><button class="btn secondary" onclick="toggleMenu()">☰</button><button class="btn" onclick="logout()">Esci</button></div></header><section id="view"></section></main><nav id="bottom" class="bottom"></nav><div id="modal" class="modal"><div class="dialog"><div class="top"><h2 id="mtitle"></h2><button class="btn secondary" onclick="closeModal()">Chiudi</button></div><div id="mbody"></div></div></div><script>
 window.addEventListener('error',function(e){
   var box=document.getElementById('fatalError');
   if(!box){
@@ -198,6 +198,152 @@ function resetWeek(week){
   if(db.shiftWeeks&&db.shiftWeeks[week])delete db.shiftWeeks[week];
   audit('Turni','Reset settimana '+week);
   save();render();
+}
+function excelNorm(v){return String(v??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function excelWeekStart(week,year){
+  const d=new Date(Date.UTC(year,0,4)),day=d.getUTCDay()||7;
+  d.setUTCDate(d.getUTCDate()-day+1+(Number(week)-1)*7);
+  return d.toISOString().slice(0,10)
+}
+function excelStoreId(v){
+  const n=excelNorm(v);
+  for(const s of STORES)if(n===excelNorm(s[0])||n===excelNorm(s[1]))return s[0];
+  return null;
+}
+function excelFindEmployee(label){
+  const n=excelNorm(label),all=db.employees.filter(e=>e.stato==='attivo'||e.stato==='assente'||e.stato==='ferie'||e.stato==='malattia');
+  const exact=all.filter(e=>[e.nome+' '+e.cognome,e.cognome+' '+e.nome,e.nome,e.cognome].some(v=>excelNorm(v)===n));
+  if(exact.length===1)return{emp:exact[0],amb:[]};
+  if(exact.length>1)return{emp:null,amb:exact};
+  const first=n.split(' ')[0]||'';
+  const near=all.filter(e=>excelNorm(e.nome)===first||excelNorm(e.cognome)===first);
+  return near.length===1?{emp:near[0],amb:[]}:{emp:null,amb:near};
+}
+function excelStatus(v){
+  const n=excelNorm(v);
+  if(!n)return'';
+  if(n==='x'||n==='turno'||n==='presenza')return'Turno';
+  if(n==='riposo')return'Riposo';
+  if(n==='rip comp'||n==='rip comp.'||n==='riposo comp'||n==='riposo compensativo')return'Riposo Comp.';
+  if(n==='ferie')return'Ferie';
+  if(n==='malattia')return'Malattia';
+  if(n==='infortunio')return'Infortunio';
+  const store=excelStoreId(v);
+  return store?store:'UNKNOWN';
+}
+function excelCellValue(row,day){
+  const vals=row.slice(1+day*4,5+day*4).map(v=>String(v??'').trim()).filter(Boolean);
+  if(!vals.length)return'';
+  const uniq=[...new Set(vals.map(excelNorm))];
+  if(uniq.length===1)return vals[0];
+  const priority=['FERIE','MALATTIA','INFORTUNIO','RIPOSO','RIP. COMP.','RIPOSO COMP.','X'];
+  for(const p of priority)if(vals.some(v=>excelNorm(v)===excelNorm(p)))return p;
+  return vals[0];
+}
+function excelImportPlan(rows,fileName){
+  const title=rows.find(r=>excelNorm(r[0]).startsWith('settimana n.'));
+  const m=title&&String(title[0]).match(/(\\d{1,2})/);
+  const weekNo=m?Number(m[1]):null;
+  if(!weekNo||weekNo<1||weekNo>53)throw new Error('Numero settimana non trovato nel file.');
+  const year=new Date().getFullYear(),week=excelWeekStart(weekNo,year),dates=shiftWeekDates(week);
+  const storesByNorm=new Map(STORES.flatMap(s=>[[excelNorm(s[0]),s[0]],[excelNorm(s[1]),s[0]]]));
+  let currentStore='',currentStoreLabel='',headerFound=false;
+  const records=[],unmatched=[],ambiguous=[],unauthorized=[],closed=[],warnings=[];
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r]||[],first=String(row[0]??'').trim(),fn=excelNorm(first);
+    if(!first)continue;
+    const sid=storesByNorm.get(fn);
+    if(sid){currentStore=sid;currentStoreLabel=first;continue}
+    if(fn==='note'||fn.startsWith('settimana n.')||fn==='lunedi'||fn==='martedi'||fn==='mercoledi'||fn==='giovedi'||fn==='venerdi'||fn==='sabato'||fn==='domenica')continue;
+    if(!currentStore)continue;
+    if(r<5)continue;
+    const match=excelFindEmployee(first);
+    if(!match.emp){
+      if(match.amb.length)ambiguous.push(first+' → '+match.amb.map(e=>e.nome+' '+e.cognome).join(', '));
+      else unmatched.push(first);
+      continue;
+    }
+    const e=match.emp;
+    for(let d=0;d<7;d++){
+      const raw=excelCellValue(row,d),kind=excelStatus(raw);
+      if(!kind)continue;
+      if(kind==='UNKNOWN'){warnings.push(first+' '+dates[d]+' · valore Excel non riconosciuto: '+raw);continue}
+      const store=(kind==='Turno'||kind==='Riposo'||kind==='Riposo Comp.'||kind==='Ferie'||kind==='Malattia'||kind==='Infortunio')?currentStore:kind;
+      const type=(kind===currentStore||kind==='Turno')?'Turno':kind;
+      if(store&&type==='Turno'&&!eligibleForStore(e,store))unauthorized.push(first+' · '+dates[d]+' → '+storeNameOf(store));
+      const h=storeDay(store,dates[d]);
+      if(h&&h.closed)closed.push(storeNameOf(store)+' · '+dates[d]+' · '+first);
+      records.push({emp:e.id,date:dates[d],store,type,orarioDaDefinire:type==='Turno'&&!['Riposo','Riposo Comp.'].includes(type),raw,sourceRow:r+1});
+    }
+  }
+  if(!records.length)throw new Error('Nessuna riga di turni riconosciuta nel file.');
+  return{week,weekNo,dates,records,unmatched,ambiguous,unauthorized,closed,warnings,fileName,storeLabels:[...new Set(records.map(x=>x.store))]};
+}
+function renderExcelImportPreview(plan){
+  const box=document.getElementById('excelImportPreview');if(!box)return;
+  const byType=plan.records.reduce((a,x)=>(a[x.type]=(a[x.type]||0)+1,a),{});
+  const issues=plan.unmatched.length+plan.ambiguous.length+plan.unauthorized.length+plan.closed.length+plan.warnings.length;
+  const issueHtml=issues?'<div class="card section" style="border-color:#a33"><b>Controlli da verificare</b><div class="muted section">'+
+    (plan.unmatched.length?'<div><b>Lavoratori non trovati:</b> '+plan.unmatched.join(', ')+'</div>':'')+
+    (plan.ambiguous.length?'<div><b>Nomi ambigui:</b> '+plan.ambiguous.join(' · ')+'</div>':'')+
+    (plan.unauthorized.length?'<div><b>Mobilità non autorizzata:</b> '+plan.unauthorized.slice(0,20).join(' · ')+'</div>':'')+
+    (plan.closed.length?'<div><b>Negozio chiuso:</b> '+plan.closed.slice(0,20).join(' · ')+'</div>':'')+
+    (plan.warnings.length?'<div><b>Valori non riconosciuti:</b> '+plan.warnings.slice(0,20).join(' · ')+'</div>':'')+
+    '</div></div>':'<div class="card section"><b>Controlli superati</b><div class="muted">Nessun lavoratore ambiguo, mobilità non autorizzata o negozio chiuso.</div></div>';
+  box.innerHTML='<div class="card"><b>Settimana '+plan.weekNo+' · '+weekLabel(plan.week)+'</b><div class="muted section">'+esc(plan.fileName)+' · '+plan.records.length+' voci importabili</div><div class="section">'+Object.entries(byType).map(([k,v])=>'<span style="display:inline-block;margin:3px 5px 3px 0;padding:5px 8px;border-radius:8px;background:#292d33">'+esc(k)+': <b>'+v+'</b></span>').join('')+'</div></div>'+issueHtml+
+    '<div class="actions section"><button class="btn green" onclick="confirmExcelImport()">✓ Genera settimana da Excel</button><button class="btn secondary" onclick="closeModal()">Annulla</button></div>';
+}
+function importWeekExcelModal(){
+  if(user.ruolo!==3)return;
+  openModal('Genera settimana da Excel','<div class="card"><b>Importa il modello turni Excel</b><div class="muted section">Il file deve contenere le sezioni dei punti vendita e i lavoratori per riga. X = presenza, RIPOSO = riposo, FERIE/MALATTIA = assenza, nome negozio = mobilità autorizzata.</div><input id="excelWeekFile" type="file" accept=".xlsx,.xls" class="section" onchange="readExcelWeek(this)"></div><div id="excelImportPreview" class="section"></div>');
+}
+function readExcelWeek(input){
+  const file=input&&input.files&&input.files[0];if(!file)return;
+  if(typeof XLSX==='undefined'){alert('Lettore Excel non disponibile. Controlla la connessione e riprova.');return}
+  file.arrayBuffer().then(buf=>{
+    try{
+      const book=XLSX.read(buf,{type:'array',cellDates:true});
+      const sheet=book.Sheets[book.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
+      window._excelImportPlan=excelImportPlan(rows,file.name);
+      renderExcelImportPreview(window._excelImportPlan);
+    }catch(e){window._excelImportPlan=null;alert('Import Excel non riuscito: '+(e&&e.message||e))}
+  }).catch(e=>alert('Impossibile leggere il file Excel: '+(e&&e.message||e)));
+}
+function confirmExcelImport(){
+  const plan=window._excelImportPlan;
+  if(!plan)return;
+  if(plan.unmatched.length||plan.ambiguous.length||plan.unauthorized.length||plan.closed.length||plan.warnings.length){
+    if(!confirm('Il file contiene anomalie evidenziate nella schermata. Vuoi comunque importare solo le voci riconosciute?'))return;
+  }
+  const dates=plan.dates,week=plan.week;
+  const existing=db.shifts.filter(s=>dates.includes(s.date)&&['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio'].includes(s.type));
+  const states=shiftStores().filter(s=>['inviato_direttore','approvata_direttore','inviato_titolare','approvata_titolare'].includes(weekStoreStatus(week,s)));
+  if(existing.length||states.length){
+    if(!confirm('La settimana '+weekLabel(week)+' contiene già una generazione o è già in approvazione. Vuoi sovrascrivere la programmazione importata e riportarla in bozza?'))return;
+  }
+  const valid=plan.records.filter(x=>{
+    if(plan.unauthorized.some(v=>v.startsWith(String(db.employees.find(e=>String(e.id)===String(x.emp))?.nome||'')+' ')&&v.includes(x.date)))return false;
+    const h=storeDay(x.store,x.date);if(h&&h.closed)return false;
+    if(x.type==='Turno'&&approvedAbsence(x.emp,x.date))return false;
+    return true;
+  });
+  if(!valid.length){alert('Nessuna voce valida da importare.');return}
+  db.shifts=db.shifts.filter(s=>!(dates.includes(s.date)&&['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio'].includes(s.type)));
+  db.absences=db.absences.filter(a=>!(a.source==='excel-import'&&dates.some(d=>d>=a.da&&d<=a.a)));
+  let n=0,abs=0;
+  for(const x of valid){
+    const shift={id:Date.now()+Math.floor(Math.random()*1000000)+n,emp:x.emp,date:x.date,store:x.store,in:'',out:'',breakStart:'',breakEnd:'',type:x.type,note:'Importato da Excel · '+plan.fileName,source:'excel-import'};
+    if(x.type==='Turno'){shift.orarioDaDefinire=true}
+    db.shifts.push(shift);n++;
+    if(['Ferie','Malattia','Infortunio'].includes(x.type)){
+      db.absences.push({id:Date.now()+Math.floor(Math.random()*1000000)+n,emp:x.emp,tipo:x.type,da:x.date,a:x.date,note:'Importato da Excel · '+plan.fileName,stato:'approvato',source:'excel-import'});abs++;
+    }
+  }
+  for(const st of shiftStores())weekStoreState(week,st).status='bozza';
+  audit('Turni','Importata settimana '+plan.weekNo+' da Excel · '+n+' voci · '+abs+' assenze');
+  save();window._excelImportPlan=null;closeModal();document.getElementById('shiftWeek')?.setAttribute('value',week);render();
+  alert('Settimana '+plan.weekNo+' importata correttamente. È in bozza ed è pronta per l’invio ai Direttori.');
 }
 function generateWeekModal(){
   if(user.ruolo!==3)return;
@@ -741,7 +887,7 @@ function shifts(){
   const weekNo=isoWeekNumber(selected);
   let controls='<div class="actions"><label class="muted">Settimana<input id="shiftWeek" type="date" value="'+selected+'" onchange="render()" style="margin-left:6px;background:#292d33;color:#fff;border:1px solid #454a52;border-radius:8px;padding:10px"></label>';
   if(user.ruolo===3){
-    controls+='<button class="btn" onclick="generateWeekModal()">⚙ Genera settimana</button><button class="btn danger" onclick="resetWeek(&quot;'+selected+'&quot;)">↺ Reset settimana</button><button class="btn" onclick="sendWeekToDirectors(&quot;'+selected+'&quot;)">📨 Invia ai Direttori</button>';
+    controls+='<button class="btn" onclick="generateWeekModal()">⚙ Genera settimana</button><button class="btn" onclick="importWeekExcelModal()">📥 Importa Excel</button><button class="btn danger" onclick="resetWeek(&quot;'+selected+'&quot;)">↺ Reset settimana</button><button class="btn" onclick="sendWeekToDirectors(&quot;'+selected+'&quot;)">📨 Invia ai Direttori</button>';
     if(allStoresDirectorApproved(selected))controls+='<button class="btn" onclick="sendWeeksToOwner(&quot;'+selected+'&quot;)">📨 Invia tutte al Titolare</button>';
     if(shiftStores().every(s=>weekStoreStatus(selected,s)==='inviato_titolare'))controls+='<button class="btn green" onclick="approveAllWeeksByOwner(&quot;'+selected+'&quot;)">✓ Approva tutte le settimane</button>';
   }else if(user.ruolo===2){
