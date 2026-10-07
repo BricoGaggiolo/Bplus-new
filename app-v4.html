@@ -281,7 +281,7 @@ function excelImportPlan(rows,fileName,weekNo){
   let currentStore='',currentStoreLabel='';
   const records=[],unmatched=[],ambiguous=[],unauthorized=[],closed=[],warnings=[];
   function employeeFromRow(row){
-    for(let c=0;c<Math.min(row.length,8);c++){
+    for(let c=0;c<row.length;c++){
       const v=String(row[c]??'').trim();if(!v)continue;
       const m=excelFindEmployee(v);if(m.emp||m.amb.length)return{match:m,col:c,label:v};
     }
@@ -295,9 +295,10 @@ function excelImportPlan(rows,fileName,weekNo){
       const vals=row.slice(start,Math.max(start+1,end+1)).map(v=>String(v??'').trim()).filter(Boolean);
       if(vals.length)return excelCellValue(vals);
     }
-    const remaining=Math.max(0,row.length-(workerCol+1));
-    const group=remaining>=28?4:remaining>=14?2:1;
     const offset=workerCol+1;
+    const tail=row.slice(offset);
+    const remaining=tail.length;
+    const group=remaining>=28?4:remaining>=14?2:1;
     const vals=row.slice(offset+day*group,offset+(day+1)*group).map(v=>String(v??'').trim()).filter(Boolean);
     if(vals.length)return excelCellValue(vals);
     return '';
@@ -390,11 +391,27 @@ function readExcelWeek(input){
   file.arrayBuffer().then(buf=>{
     try{
       const book=XLSX.read(buf,{type:'array',cellDates:true});
-      const sheet=book.Sheets[book.SheetNames[0]];
-      const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:''});
-      window._excelImportPlan=excelImportPlan(rows,file.name,Number(weekNo));
+      const candidates=[];
+      for(const sheetName of book.SheetNames){
+        const sheet=book.Sheets[sheetName];
+        const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false});
+        if(!rows.length)continue;
+        try{
+          const plan=excelImportPlan(rows,file.name+' · '+sheetName,Number(weekNo));
+          candidates.push(plan);
+        }catch(e){}
+      }
+      candidates.sort((a,b)=>b.records.length-a.records.length);
+      if(!candidates.length){
+        const names=book.SheetNames.join(', ');
+        throw new Error('Nessuna riga di turni riconosciuta. Fogli analizzati: '+names+'. Il modello deve contenere almeno un nome lavoratore e le colonne della settimana.');
+      }
+      window._excelImportPlan=candidates[0];
       renderExcelImportPreview(window._excelImportPlan);
-    }catch(e){window._excelImportPlan=null;alert('Import Excel non riuscito: '+(e&&e.message||e))}
+    }catch(e){
+      window._excelImportPlan=null;
+      alert('Import Excel non riuscito: '+(e&&e.message||e));
+    }
   }).catch(e=>alert('Impossibile leggere il file Excel: '+(e&&e.message||e)));
 }
 function confirmExcelImport(){
