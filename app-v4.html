@@ -211,13 +211,29 @@ function excelStoreId(v){
   return null;
 }
 function excelFindEmployee(label){
-  const n=excelNorm(label),all=db.employees.filter(e=>e.stato==='attivo'||e.stato==='assente'||e.stato==='ferie'||e.stato==='malattia');
-  const exact=all.filter(e=>[e.nome+' '+e.cognome,e.cognome+' '+e.nome,e.nome,e.cognome].some(v=>excelNorm(v)===n));
+  const n=excelNorm(label);
+  const all=db.employees.filter(e=>{
+    const st=excelNorm(e.stato||'');
+    return e.inTurni!==false&&!['licenziato','cessato','dimesso','inattivo'].includes(st);
+  });
+  const exact=all.filter(e=>[
+    e.nome+' '+e.cognome,
+    e.cognome+' '+e.nome,
+    e.nome,
+    e.cognome,
+    (e.nome||'')+' '+String(e.cognome||'').split(' ')[0],
+    String(e.cognome||'').split(' ')[0]+' '+(e.nome||'')
+  ].some(v=>excelNorm(v)===n));
   if(exact.length===1)return{emp:exact[0],amb:[]};
   if(exact.length>1)return{emp:null,amb:exact};
-  const first=n.split(' ')[0]||'';
-  const near=all.filter(e=>excelNorm(e.nome)===first||excelNorm(e.cognome)===first);
-  return near.length===1?{emp:near[0],amb:[]}:{emp:null,amb:near};
+  const tokens=n.split(' ').filter(Boolean);
+  const first=tokens[0]||'';
+  const near=all.filter(e=>{
+    const en=excelNorm(e.nome||''),ec=excelNorm(e.cognome||'');
+    return en===first||ec===first||en.startsWith(first+' ')||ec.startsWith(first+' ');
+  });
+  if(near.length===1)return{emp:near[0],amb:[]};
+  return{emp:null,amb:near};
 }
 function excelStatus(v){
   const n=excelNorm(v);
