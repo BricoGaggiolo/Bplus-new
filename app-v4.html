@@ -199,29 +199,30 @@ function resetWeek(week){
   audit('Turni','Reset settimana '+week);
   save();render();
 }
-function excelNorm(v){return String(v??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
+function excelNorm(v){return String(v??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function excelWeekStart(week,year){
   const d=new Date(Date.UTC(year,0,4)),day=d.getUTCDay()||7;
   d.setUTCDate(d.getUTCDate()-day+1+(Number(week)-1)*7);
-  return d.toISOString().slice(0,10)
+  return d.toISOString().slice(0,10);
 }
 function excelStoreId(v){
   const n=excelNorm(v);
   for(const s of STORES)if(n===excelNorm(s[0])||n===excelNorm(s[1]))return s[0];
+  if(n.includes('gaggiolo'))return'GAG';
+  if(n.includes('cocquio'))return'COC';
+  if(n.includes('daverio'))return'DAV';
   return null;
 }
 function excelFindEmployee(label){
   const n=excelNorm(label);
   if(!n)return{emp:null,amb:[]};
-  const all=db.employees.filter(e=>e&&e.inTurni!==false);
-  const exact=all.filter(e=>[
-    e.nome+' '+e.cognome,
-    e.cognome+' '+e.nome,
-    e.nome,
-    e.cognome,
+  const all=db.employees.filter(e=>e);
+  const aliases=e=>[
+    e.nome+' '+e.cognome,e.cognome+' '+e.nome,e.nome,e.cognome,
     (e.nome||'')+' '+String(e.cognome||'').split(' ')[0],
     String(e.cognome||'').split(' ')[0]+' '+(e.nome||'')
-  ].some(v=>excelNorm(v)===n));
+  ].map(excelNorm).filter(Boolean);
+  const exact=all.filter(e=>aliases(e).includes(n));
   if(exact.length===1)return{emp:exact[0],amb:[]};
   if(exact.length>1)return{emp:null,amb:exact};
   const tokens=n.split(' ').filter(Boolean);
@@ -229,13 +230,14 @@ function excelFindEmployee(label){
     const en=excelNorm(e.nome||''),ec=excelNorm(e.cognome||''),full=excelNorm((e.nome||'')+' '+(e.cognome||''));
     let score=0;
     for(const t of tokens){
-      if(en===t)score+=5;
-      else if(ec===t)score+=5;
-      else if(en.startsWith(t))score+=3;
-      else if(ec.startsWith(t))score+=3;
+      if(t.length<2)continue;
+      if(en===t||ec===t)score+=7;
+      else if(en.startsWith(t)||ec.startsWith(t))score+=5;
+      else if(en.includes(t)||ec.includes(t))score+=3;
       else if(full.includes(t))score+=1;
     }
-    if(full.includes(n)||n.includes(full))score+=4;
+    if(full===n)score+=10;
+    else if(full.includes(n)||n.includes(full))score+=4;
     return{e,score};
   }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
   if(!scored.length)return{emp:null,amb:[]};
@@ -245,119 +247,123 @@ function excelFindEmployee(label){
 function excelStatus(v){
   const n=excelNorm(v);
   if(!n)return'';
-  if(n==='x'||n==='turno'||n==='presenza')return'Turno';
-  if(n==='riposo')return'Riposo';
-  if(n==='rip comp'||n==='rip comp.'||n==='riposo comp'||n==='riposo compensativo')return'Riposo Comp.';
-  if(n==='ferie')return'Ferie';
-  if(n==='malattia')return'Malattia';
-  if(n==='infortunio')return'Infortunio';
+  if(['x','turno','presenza','p'].includes(n))return'Turno';
+  if(['r','rip','riposo'].includes(n))return'Riposo';
+  if(['rip comp','rip comp','riposo comp','riposo compensativo','compensativo'].includes(n))return'Riposo Comp.';
+  if(['ferie','fer','f'].includes(n))return'Ferie';
+  if(['malattia','mal','m'].includes(n))return'Malattia';
+  if(['infortunio','inf','infortun'].includes(n))return'Infortunio';
   const store=excelStoreId(v);
-  return store?store:'UNKNOWN';
+  return store||'UNKNOWN';
 }
-function excelCellValue(row,day){
-  const vals=row.slice(1+day*4,5+day*4).map(v=>String(v??'').trim()).filter(Boolean);
-  if(!vals.length)return'';
-  const uniq=[...new Set(vals.map(excelNorm))];
-  if(uniq.length===1)return vals[0];
-  const priority=['FERIE','MALATTIA','INFORTUNIO','RIPOSO','RIP. COMP.','RIPOSO COMP.','X'];
-  for(const p of priority)if(vals.some(v=>excelNorm(v)===excelNorm(p)))return p;
-  return vals[0];
+function excelCellValue(vals){
+  if(!Array.isArray(vals))vals=[vals];
+  const clean=vals.map(v=>String(v??'').trim()).filter(Boolean);
+  if(!clean.length)return'';
+  const priority=['FERIE','FER','MALATTIA','MAL','INFORTUNIO','INF','RIP. COMP.','RIP COMP','RIPOSO COMP.','RIPOSO','RIP','PRESENZA','TURNO','X'];
+  for(const p of priority)if(clean.some(v=>excelNorm(v)===excelNorm(p)))return p;
+  const known=clean.map(v=>excelStatus(v)).find(k=>k&&k!=='UNKNOWN');
+  return known||clean[0];
 }
 function excelImportPlan(rows,fileName,weekNo){
   weekNo=Number(weekNo);
   if(!weekNo||weekNo<1||weekNo>53)throw new Error('Numero settimana non valido. Inserisci un valore da 1 a 53.');
   const year=new Date().getFullYear(),week=excelWeekStart(weekNo,year),dates=shiftWeekDates(week);
-  const storesByNorm=new Map(STORES.flatMap(s=>[[excelNorm(s[0]),s[0]],[excelNorm(s[1]),s[0]]]));
-  const dayNames=['lunedi','martedi','mercoledi','giovedi','venerdi','sabato','domenica'];
+  const dayAliases=[
+    ['lun','lunedi'],['mar','martedi'],['mer','mercoledi'],['gio','giovedi'],['ven','venerdi'],['sab','sabato'],['dom','domenica']
+  ];
   const dayCols=new Array(7).fill(null);
-  for(let r=0;r<Math.min(rows.length,30);r++){
+  for(let r=0;r<Math.min(rows.length,20);r++){
     const row=rows[r]||[];
     for(let c=0;c<row.length;c++){
       const n=excelNorm(row[c]);
-      const di=dayNames.indexOf(n);
-      if(di>=0&&!dayCols[di])dayCols[di]=c;
+      for(let d=0;d<7;d++)if(dayAliases[d].includes(n)&&dayCols[d]===null){dayCols[d]=c;break}
     }
   }
-  let currentStore='',currentStoreLabel='';
-  const records=[],unmatched=[],ambiguous=[],unauthorized=[],closed=[],warnings=[];
+  let currentStore='';
+  const records=[],unmatched=[],ambiguous=[],unauthorized=[],closed=[],warnings=[],seen=new Map();
   function employeeFromRow(row){
-    for(let c=0;c<row.length;c++){
+    const max=dayCols.find(x=>x!==null);
+    const limit=max===undefined?Math.min(row.length,6):Math.min(row.length,Math.max(1,max));
+    const candidates=[];
+    for(let c=0;c<limit;c++){
       const v=String(row[c]??'').trim();if(!v)continue;
-      const m=excelFindEmployee(v);if(m.emp||m.amb.length)return{match:m,col:c,label:v};
+      const sid=excelStoreId(v);if(sid)continue;
+      const m=excelFindEmployee(v);
+      if(m.emp||m.amb.length)candidates.push({match:m,col:c,label:v});
     }
-    return null;
+    return candidates[0]||null;
   }
   function rowDayValue(row,workerCol,day){
-    const start=dayCols[day];
-    if(start!=null){
-      let end=row.length-1;
-      for(let d=day+1;d<7;d++){if(dayCols[d]!=null){end=dayCols[d]-1;break}}
-      const vals=row.slice(start,Math.max(start+1,end+1)).map(v=>String(v??'').trim()).filter(Boolean);
-      if(vals.length)return excelCellValue(vals);
+    let start=dayCols[day];
+    if(start===null){
+      start=workerCol+1+day*4;
     }
-    const offset=workerCol+1;
-    const tail=row.slice(offset);
-    const remaining=tail.length;
-    const group=remaining>=28?4:remaining>=14?2:1;
-    const vals=row.slice(offset+day*group,offset+(day+1)*group).map(v=>String(v??'').trim()).filter(Boolean);
-    if(vals.length)return excelCellValue(vals);
-    return '';
+    let end;
+    if(dayCols[day+1]!==null&&dayCols[day+1]!==undefined)end=dayCols[day+1];
+    else end=Math.min(row.length,start+4);
+    const vals=row.slice(start,end).map(v=>String(v??'').trim()).filter(Boolean);
+    return excelCellValue(vals);
   }
-  function excelCellValue(vals){
-    if(!vals||!vals.length)return'';
-    const priority=['FERIE','MALATTIA','INFORTUNIO','RIPOSO','RIP. COMP.','RIPOSO COMP.','PRESENZA','TURNO','X'];
-    for(const p of priority)if(vals.some(v=>excelNorm(v)===excelNorm(p)))return p;
-    const statusVals=vals.map(v=>excelStatus(v)).filter(k=>k&&k!=='UNKNOWN');
-    if(statusVals.length)return statusVals[0];
-    return vals[0];
+  function addRecord(e,date,store,type,raw,r,blockedReason){
+    if(!store){
+      store=e.negozio||'';
+      if(!store){warnings.push(e.nome+' '+e.cognome+' '+date+' · punto vendita non determinato');return}
+    }
+    const key=String(e.id)+'|'+date;
+    const old=seen.get(key);
+    if(old){
+      if(old.store!==store){
+        warnings.push(e.nome+' '+e.cognome+' '+date+' · doppio punto vendita ('+storeNameOf(old.store)+' / '+storeNameOf(store)+')');
+        old.blockedReason=old.blockedReason||'doppio-negozio';
+      }
+      return;
+    }
+    const rec={emp:e.id,date,store,type,orarioDaDefinire:type==='Turno',raw,sourceRow:r+1,blockedReason:blockedReason||''};
+    records.push(rec);seen.set(key,rec);
   }
   for(let r=0;r<rows.length;r++){
     const row=rows[r]||[];
     const nonEmpty=row.map(v=>String(v??'').trim()).filter(Boolean);
     if(!nonEmpty.length)continue;
-    let sid='';
-    for(const v of nonEmpty){const x=storesByNorm.get(excelNorm(v));if(x){sid=x;break}}
+    const rowStores=nonEmpty.map(excelStoreId).filter(Boolean);
     const empInfo=employeeFromRow(row);
-    if(sid&&!empInfo){currentStore=sid;currentStoreLabel=nonEmpty.find(v=>storesByNorm.get(excelNorm(v)))||sid;continue}
-    if(!empInfo)continue;
-    if(!currentStore){
-      const inlineStore=nonEmpty.map(v=>storesByNorm.get(excelNorm(v))).find(Boolean);
-      if(inlineStore)currentStore=inlineStore;
+    if(rowStores.length&&!empInfo){
+      currentStore=rowStores[0];
+      continue;
     }
-    const match=empInfo.match;
-    if(!match.emp){
-      if(match.amb.length)ambiguous.push(empInfo.label+' → '+match.amb.map(e=>e.nome+' '+e.cognome).join(', '));
+    if(!empInfo)continue;
+    const e=empInfo.match.emp;
+    if(!e){
+      if(empInfo.match.amb.length)ambiguous.push(empInfo.label+' → '+empInfo.match.amb.map(x=>x.nome+' '+x.cognome).join(', '));
       else unmatched.push(empInfo.label);
       continue;
     }
-    const e=match.emp;
+    const inlineStore=rowStores[0]||currentStore||e.negozio||'';
+    if(rowStores.length)currentStore=rowStores[0];
     for(let d=0;d<7;d++){
       const raw=rowDayValue(row,empInfo.col,d),kind=excelStatus(raw);
       if(!kind)continue;
+      let store=inlineStore,type=kind;
       if(kind==='UNKNOWN'){
-        const maybeStore=excelStoreId(raw);
-        if(maybeStore){
-          const store=maybeStore;
-          let blockedReason='';
-          if(!eligibleForStore(e,store)){unauthorized.push(empInfo.label+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
-          const h=storeDay(store,dates[d]);if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+empInfo.label);blockedReason=blockedReason||'chiuso'}
-          records.push({emp:e.id,date:dates[d],store,type:'Turno',orarioDaDefinire:true,raw,sourceRow:r+1,blockedReason});
-          continue;
-        }
-        warnings.push(empInfo.label+' '+dates[d]+' · valore Excel non riconosciuto: '+raw);
-        continue;
+        const maybe=excelStoreId(raw);
+        if(maybe){store=maybe;type='Turno'}
+        else{warnings.push(empInfo.label+' '+dates[d]+' · valore Excel non riconosciuto: '+raw);continue}
       }
-      const store=(kind==='Turno'||kind==='Riposo'||kind==='Riposo Comp.'||kind==='Ferie'||kind==='Malattia'||kind==='Infortunio')?currentStore:kind;
-      const type=(kind===currentStore||kind==='Turno')?'Turno':kind;
-      let blockedReason='';
-      if(store&&type==='Turno'&&!eligibleForStore(e,store)){unauthorized.push(empInfo.label+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
-      const h=storeDay(store,dates[d]);
-      if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+empInfo.label);blockedReason=blockedReason||'chiuso'}
-      if(type==='Turno'&&approvedAbsence(e.id,dates[d]))blockedReason=blockedReason||'assenza';
-      records.push({emp:e.id,date:dates[d],store,type,orarioDaDefinire:type==='Turno',raw,sourceRow:r+1,blockedReason});
+      if(['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio'].includes(type)){
+        if(!store){warnings.push(empInfo.label+' '+dates[d]+' · punto vendita non determinato');continue}
+        let blockedReason='';
+        if(!eligibleForStore(e,store)){
+          unauthorized.push(empInfo.label+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita';
+        }
+        const h=storeDay(store,dates[d]);
+        if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+empInfo.label);blockedReason=blockedReason||'chiuso'}
+        if(type==='Turno'&&approvedAbsence(e.id,dates[d]))blockedReason=blockedReason||'assenza';
+        addRecord(e,dates[d],store,type,raw,r,blockedReason);
+      }
     }
   }
-  if(!records.length)throw new Error('Nessuna riga di turni riconosciuta nel file. Verifica che il file contenga i nomi dei lavoratori e le colonne dei giorni Lun-Dom.');
+  if(!records.length)throw new Error('Nessuna riga di turni riconosciuta nel file. Verifica nomes, punti vendita e giorni della settimana.');
   return{week,weekNo,dates,records,unmatched,ambiguous,unauthorized,closed,warnings,fileName,storeLabels:[...new Set(records.map(x=>x.store).filter(Boolean))]};
 }
 function renderExcelImportPreview(plan){
@@ -365,11 +371,11 @@ function renderExcelImportPreview(plan){
   const byType=plan.records.reduce((a,x)=>(a[x.type]=(a[x.type]||0)+1,a),{});
   const issues=plan.unmatched.length+plan.ambiguous.length+plan.unauthorized.length+plan.closed.length+plan.warnings.length;
   const issueHtml=issues?'<div class="card section" style="border-color:#a33"><b>Controlli da verificare</b><div class="muted section">'+
-    (plan.unmatched.length?'<div><b>Lavoratori non trovati:</b> '+plan.unmatched.join(', ')+'</div>':'')+
-    (plan.ambiguous.length?'<div><b>Nomi ambigui:</b> '+plan.ambiguous.join(' · ')+'</div>':'')+
-    (plan.unauthorized.length?'<div><b>Mobilità non autorizzata:</b> '+plan.unauthorized.slice(0,20).join(' · ')+'</div>':'')+
-    (plan.closed.length?'<div><b>Negozio chiuso:</b> '+plan.closed.slice(0,20).join(' · ')+'</div>':'')+
-    (plan.warnings.length?'<div><b>Valori non riconosciuti:</b> '+plan.warnings.slice(0,20).join(' · ')+'</div>':'')+
+    (plan.unmatched.length?'<div><b>Lavoratori non trovati:</b> '+plan.unmatched.slice(0,30).join(', ')+'</div>':'')+
+    (plan.ambiguous.length?'<div><b>Nomi ambigui:</b> '+plan.ambiguous.slice(0,30).join(' · ')+'</div>':'')+
+    (plan.unauthorized.length?'<div><b>Mobilità non autorizzata:</b> '+plan.unauthorized.slice(0,30).join(' · ')+'</div>':'')+
+    (plan.closed.length?'<div><b>Negozio chiuso:</b> '+plan.closed.slice(0,30).join(' · ')+'</div>':'')+
+    (plan.warnings.length?'<div><b>Valori non riconosciuti/doppi:</b> '+plan.warnings.slice(0,30).join(' · ')+'</div>':'')+
     '</div></div>':'<div class="card section"><b>Controlli superati</b><div class="muted">Nessun lavoratore ambiguo, mobilità non autorizzata o negozio chiuso.</div></div>';
   box.innerHTML='<div class="card"><b>Settimana '+plan.weekNo+' · '+weekLabel(plan.week)+'</b><div class="muted section">'+esc(plan.fileName)+' · '+plan.records.length+' voci importabili</div><div class="section">'+Object.entries(byType).map(([k,v])=>'<span style="display:inline-block;margin:3px 5px 3px 0;padding:5px 8px;border-radius:8px;background:#292d33">'+esc(k)+': <b>'+v+'</b></span>').join('')+'</div></div>'+issueHtml+
     '<div class="actions section"><button class="btn green" onclick="confirmExcelImport()">✓ Genera settimana da Excel</button><button class="btn secondary" onclick="closeModal()">Annulla</button></div>';
@@ -433,7 +439,7 @@ function confirmExcelImport(){
   let n=0,abs=0;
   for(const x of valid){
     const shift={id:Date.now()+Math.floor(Math.random()*1000000)+n,emp:x.emp,date:x.date,store:x.store,in:'',out:'',breakStart:'',breakEnd:'',type:x.type,note:'Importato da Excel · '+plan.fileName,source:'excel-import'};
-    if(x.type==='Turno'){shift.orarioDaDefinire=true}
+    if(x.type==='Turno')shift.orarioDaDefinire=true;
     db.shifts.push(shift);n++;
     if(['Ferie','Malattia','Infortunio'].includes(x.type)){
       db.absences.push({id:Date.now()+Math.floor(Math.random()*1000000)+n,emp:x.emp,tipo:x.type,da:x.date,a:x.date,note:'Importato da Excel · '+plan.fileName,stato:'approvato',source:'excel-import'});abs++;
@@ -441,7 +447,7 @@ function confirmExcelImport(){
   }
   for(const st of shiftStores())weekStoreState(week,st).status='bozza';
   audit('Turni','Importata settimana '+plan.weekNo+' da Excel · '+n+' voci · '+abs+' assenze');
-  save();window._excelImportPlan=null;closeModal();document.getElementById('shiftWeek')?.setAttribute('value',week);render();
+  save();window._excelImportPlan=null;closeModal();render();
   alert('Settimana '+plan.weekNo+' importata correttamente. È in bozza ed è pronta per l’invio ai Direttori.');
 }
 function generateWeekModal(){
