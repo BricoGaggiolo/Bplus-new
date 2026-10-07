@@ -1,18 +1,6 @@
-const VERSION='bplus-new-v4-20261007-turnigenerator30';
+const VERSION='bplus-new-v4-20261007-turnigenerator31';
 self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',event=>{
-  if(event.request.method!=='GET') return;
-  const url=new URL(event.request.url);
-  if(url.origin!==location.origin) return;
-  event.respondWith(fetch(event.request,{cache:'no-store'}).then(response=>{
-    if(response.ok){const copy=response.clone();caches.open(VERSION).then(cache=>cache.put(event.request,copy));}
-    return response;
-  }).catch(()=>caches.match(event.request)));
-});
-self.addEventListener('push',event=>{
-  let data={title:'B+ Gestionale',body:'Nuova notifica',url:'./app.html'};
-  try{if(event.data)data=Object.assign(data,event.data.json());}catch(e){}
-  event.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'./icons/icon-192.png',badge:'./icons/icon-192.png',data:{url:data.url},tag:data.tag||'bplus'}));
-});
-self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list){if('focus' in c)return c.focus();}return clients.openWindow(event.notification.data?.url||'./app.html')}));});
+self.addEventListener('fetch',event=>{if(event.request.method!=='GET')return;const url=new URL(event.request.url);if(url.origin!==location.origin)return;event.respondWith(fetch(event.request,{cache:'no-store'}).then(response=>{if(response.ok){const copy=response.clone();caches.open(VERSION).then(cache=>cache.put(event.request,copy));}return response}).catch(()=>caches.match(event.request)))});
+self.addEventListener('push',event=>{let data={title:'B+ Gestionale',body:'Nuova notifica',url:'./app.html'};try{if(event.data)data=Object.assign(data,event.data.json())}catch(e){}event.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'./icons/icon-192.png',badge:'./icons/icon-192.png',data:{url:data.url},tag:data.tag||'bplus'}))});
+self.addEventListener('notificationclick',event=>{event.notification.close();event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{for(const c of list){if('focus'in c)return c.focus()}return clients.openWindow(event.notification.data?.url||'./app.html')}))});
