@@ -212,10 +212,8 @@ function excelStoreId(v){
 }
 function excelFindEmployee(label){
   const n=excelNorm(label);
-  const all=db.employees.filter(e=>{
-    const st=excelNorm(e.stato||'');
-    return e.inTurni!==false&&!['licenziato','cessato','dimesso','inattivo'].includes(st);
-  });
+  if(!n)return{emp:null,amb:[]};
+  const all=db.employees.filter(e=>e&&e.inTurni!==false);
   const exact=all.filter(e=>[
     e.nome+' '+e.cognome,
     e.cognome+' '+e.nome,
@@ -227,13 +225,22 @@ function excelFindEmployee(label){
   if(exact.length===1)return{emp:exact[0],amb:[]};
   if(exact.length>1)return{emp:null,amb:exact};
   const tokens=n.split(' ').filter(Boolean);
-  const first=tokens[0]||'';
-  const near=all.filter(e=>{
-    const en=excelNorm(e.nome||''),ec=excelNorm(e.cognome||'');
-    return en===first||ec===first||en.startsWith(first+' ')||ec.startsWith(first+' ');
-  });
-  if(near.length===1)return{emp:near[0],amb:[]};
-  return{emp:null,amb:near};
+  const scored=all.map(e=>{
+    const en=excelNorm(e.nome||''),ec=excelNorm(e.cognome||''),full=excelNorm((e.nome||'')+' '+(e.cognome||''));
+    let score=0;
+    for(const t of tokens){
+      if(en===t)score+=5;
+      else if(ec===t)score+=5;
+      else if(en.startsWith(t))score+=3;
+      else if(ec.startsWith(t))score+=3;
+      else if(full.includes(t))score+=1;
+    }
+    if(full.includes(n)||n.includes(full))score+=4;
+    return{e,score};
+  }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score);
+  if(!scored.length)return{emp:null,amb:[]};
+  const top=scored[0].score,near=scored.filter(x=>x.score===top).map(x=>x.e);
+  return near.length===1?{emp:near[0],amb:[]}:{emp:null,amb:near};
 }
 function excelStatus(v){
   const n=excelNorm(v);
