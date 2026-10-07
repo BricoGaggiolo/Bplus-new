@@ -1,12 +1,19 @@
-const VERSION='bplus-new-v4-20261006-turnigenerator28';
+const VERSION='bplus-new-v4-20261007-turnigenerator29';
 self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET') return;
   const url=new URL(event.request.url);
   if(url.origin!==location.origin) return;
-  event.respondWith(fetch(event.request,{cache:'no-store'}).then(response=>{
-    if(response.ok){const copy=response.clone();caches.open(VERSION).then(cache=>cache.put(event.request,copy));}
+  event.respondWith(fetch(event.request,{cache:'no-store'}).then(async response=>{
+    if(response.ok){
+      if(url.pathname.endsWith('/app-v4.html')){
+        const html=await response.text();
+        const injected=html.replace('</body>','<script src="./excel-import-fix.js?build=29"></script></body>');
+        response=new Response(injected,{status:response.status,statusText:response.statusText,headers:response.headers});
+      }
+      const copy=response.clone();caches.open(VERSION).then(cache=>cache.put(event.request,copy));
+    }
     return response;
   }).catch(()=>caches.match(event.request)));
 });
