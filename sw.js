@@ -1,4 +1,4 @@
-const VERSION='bplus-new-v4-20261007-turnigenerator29';
+const VERSION='bplus-new-v4-20261007-turnigenerator30';
 self.addEventListener('install',event=>event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==VERSION).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
@@ -9,7 +9,8 @@ self.addEventListener('fetch',event=>{
     if(response.ok){
       if(url.pathname.endsWith('/app-v4.html')){
         const html=await response.text();
-        const injected=html.replace('</body>','<script src="./excel-import-fix.js?build=29"></script></body>');
+        const pos=html.lastIndexOf('</body>');
+        const injected=pos>=0?html.slice(0,pos)+'<script src="./excel-import-fix.js?build=30"></script>'+html.slice(pos):html;
         response=new Response(injected,{status:response.status,statusText:response.statusText,headers:response.headers});
       }
       const copy=response.clone();caches.open(VERSION).then(cache=>cache.put(event.request,copy));
