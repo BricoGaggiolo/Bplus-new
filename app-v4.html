@@ -270,10 +270,12 @@ function excelImportPlan(rows,fileName){
       if(kind==='UNKNOWN'){warnings.push(first+' '+dates[d]+' · valore Excel non riconosciuto: '+raw);continue}
       const store=(kind==='Turno'||kind==='Riposo'||kind==='Riposo Comp.'||kind==='Ferie'||kind==='Malattia'||kind==='Infortunio')?currentStore:kind;
       const type=(kind===currentStore||kind==='Turno')?'Turno':kind;
-      if(store&&type==='Turno'&&!eligibleForStore(e,store))unauthorized.push(first+' · '+dates[d]+' → '+storeNameOf(store));
+      let blockedReason='';
+      if(store&&type==='Turno'&&!eligibleForStore(e,store)){unauthorized.push(first+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
       const h=storeDay(store,dates[d]);
-      if(h&&h.closed)closed.push(storeNameOf(store)+' · '+dates[d]+' · '+first);
-      records.push({emp:e.id,date:dates[d],store,type,orarioDaDefinire:type==='Turno'&&!['Riposo','Riposo Comp.'].includes(type),raw,sourceRow:r+1});
+      if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+first);blockedReason=blockedReason||'chiuso'}
+      if(type==='Turno'&&approvedAbsence(e.id,dates[d]))blockedReason=blockedReason||'assenza';
+      records.push({emp:e.id,date:dates[d],store,type,orarioDaDefinire:type==='Turno',raw,sourceRow:r+1,blockedReason});
     }
   }
   if(!records.length)throw new Error('Nessuna riga di turni riconosciuta nel file.');
@@ -322,12 +324,7 @@ function confirmExcelImport(){
   if(existing.length||states.length){
     if(!confirm('La settimana '+weekLabel(week)+' contiene già una generazione o è già in approvazione. Vuoi sovrascrivere la programmazione importata e riportarla in bozza?'))return;
   }
-  const valid=plan.records.filter(x=>{
-    if(plan.unauthorized.some(v=>v.startsWith(String(db.employees.find(e=>String(e.id)===String(x.emp))?.nome||'')+' ')&&v.includes(x.date)))return false;
-    const h=storeDay(x.store,x.date);if(h&&h.closed)return false;
-    if(x.type==='Turno'&&approvedAbsence(x.emp,x.date))return false;
-    return true;
-  });
+  const valid=plan.records.filter(x=>!x.blockedReason);
   if(!valid.length){alert('Nessuna voce valida da importare.');return}
   db.shifts=db.shifts.filter(s=>!(dates.includes(s.date)&&['Turno','Riposo','Riposo Comp.','Ferie','Malattia','Infortunio'].includes(s.type)));
   db.absences=db.absences.filter(a=>!(a.source==='excel-import'&&dates.some(d=>d>=a.da&&d<=a.a)));
