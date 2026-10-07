@@ -245,39 +245,96 @@ function excelImportPlan(rows,fileName,weekNo){
   if(!weekNo||weekNo<1||weekNo>53)throw new Error('Numero settimana non valido. Inserisci un valore da 1 a 53.');
   const year=new Date().getFullYear(),week=excelWeekStart(weekNo,year),dates=shiftWeekDates(week);
   const storesByNorm=new Map(STORES.flatMap(s=>[[excelNorm(s[0]),s[0]],[excelNorm(s[1]),s[0]]]));
-  let currentStore='',currentStoreLabel='',headerFound=false;
+  const dayNames=['lunedi','martedi','mercoledi','giovedi','venerdi','sabato','domenica'];
+  const dayCols=new Array(7).fill(null);
+  for(let r=0;r<Math.min(rows.length,30);r++){
+    const row=rows[r]||[];
+    for(let c=0;c<row.length;c++){
+      const n=excelNorm(row[c]);
+      const di=dayNames.indexOf(n);
+      if(di>=0&&!dayCols[di])dayCols[di]=c;
+    }
+  }
+  let currentStore='',currentStoreLabel='';
   const records=[],unmatched=[],ambiguous=[],unauthorized=[],closed=[],warnings=[];
+  function employeeFromRow(row){
+    for(let c=0;c<Math.min(row.length,8);c++){
+      const v=String(row[c]??'').trim();if(!v)continue;
+      const m=excelFindEmployee(v);if(m.emp||m.amb.length)return{match:m,col:c,label:v};
+    }
+    return null;
+  }
+  function rowDayValue(row,workerCol,day){
+    const start=dayCols[day];
+    if(start!=null){
+      let end=row.length-1;
+      for(let d=day+1;d<7;d++){if(dayCols[d]!=null){end=dayCols[d]-1;break}}
+      const vals=row.slice(start,Math.max(start+1,end+1)).map(v=>String(v??'').trim()).filter(Boolean);
+      if(vals.length)return excelCellValue(vals);
+    }
+    const remaining=Math.max(0,row.length-(workerCol+1));
+    const group=remaining>=28?4:remaining>=14?2:1;
+    const offset=workerCol+1;
+    const vals=row.slice(offset+day*group,offset+(day+1)*group).map(v=>String(v??'').trim()).filter(Boolean);
+    if(vals.length)return excelCellValue(vals);
+    return '';
+  }
+  function excelCellValue(vals){
+    if(!vals||!vals.length)return'';
+    const priority=['FERIE','MALATTIA','INFORTUNIO','RIPOSO','RIP. COMP.','RIPOSO COMP.','PRESENZA','TURNO','X'];
+    for(const p of priority)if(vals.some(v=>excelNorm(v)===excelNorm(p)))return p;
+    const statusVals=vals.map(v=>excelStatus(v)).filter(k=>k&&k!=='UNKNOWN');
+    if(statusVals.length)return statusVals[0];
+    return vals[0];
+  }
   for(let r=0;r<rows.length;r++){
-    const row=rows[r]||[],first=String(row[0]??'').trim(),fn=excelNorm(first);
-    if(!first)continue;
-    const sid=storesByNorm.get(fn);
-    if(sid){currentStore=sid;currentStoreLabel=first;continue}
-    if(fn==='note'||fn.startsWith('settimana n.')||fn==='lunedi'||fn==='martedi'||fn==='mercoledi'||fn==='giovedi'||fn==='venerdi'||fn==='sabato'||fn==='domenica')continue;
-    if(!currentStore)continue;
-    if(r<5)continue;
-    const match=excelFindEmployee(first);
+    const row=rows[r]||[];
+    const nonEmpty=row.map(v=>String(v??'').trim()).filter(Boolean);
+    if(!nonEmpty.length)continue;
+    let sid='';
+    for(const v of nonEmpty){const x=storesByNorm.get(excelNorm(v));if(x){sid=x;break}}
+    const empInfo=employeeFromRow(row);
+    if(sid&&!empInfo){currentStore=sid;currentStoreLabel=nonEmpty.find(v=>storesByNorm.get(excelNorm(v)))||sid;continue}
+    if(!empInfo)continue;
+    if(!currentStore){
+      const inlineStore=nonEmpty.map(v=>storesByNorm.get(excelNorm(v))).find(Boolean);
+      if(inlineStore)currentStore=inlineStore;
+    }
+    const match=empInfo.match;
     if(!match.emp){
-      if(match.amb.length)ambiguous.push(first+' → '+match.amb.map(e=>e.nome+' '+e.cognome).join(', '));
-      else unmatched.push(first);
+      if(match.amb.length)ambiguous.push(empInfo.label+' → '+match.amb.map(e=>e.nome+' '+e.cognome).join(', '));
+      else unmatched.push(empInfo.label);
       continue;
     }
     const e=match.emp;
     for(let d=0;d<7;d++){
-      const raw=excelCellValue(row,d),kind=excelStatus(raw);
+      const raw=rowDayValue(row,empInfo.col,d),kind=excelStatus(raw);
       if(!kind)continue;
-      if(kind==='UNKNOWN'){warnings.push(first+' '+dates[d]+' · valore Excel non riconosciuto: '+raw);continue}
+      if(kind==='UNKNOWN'){
+        const maybeStore=excelStoreId(raw);
+        if(maybeStore){
+          const store=maybeStore;
+          let blockedReason='';
+          if(!eligibleForStore(e,store)){unauthorized.push(empInfo.label+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
+          const h=storeDay(store,dates[d]);if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+empInfo.label);blockedReason=blockedReason||'chiuso'}
+          records.push({emp:e.id,date:dates[d],store,type:'Turno',orarioDaDefinire:true,raw,sourceRow:r+1,blockedReason});
+          continue;
+        }
+        warnings.push(empInfo.label+' '+dates[d]+' · valore Excel non riconosciuto: '+raw);
+        continue;
+      }
       const store=(kind==='Turno'||kind==='Riposo'||kind==='Riposo Comp.'||kind==='Ferie'||kind==='Malattia'||kind==='Infortunio')?currentStore:kind;
       const type=(kind===currentStore||kind==='Turno')?'Turno':kind;
       let blockedReason='';
-      if(store&&type==='Turno'&&!eligibleForStore(e,store)){unauthorized.push(first+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
+      if(store&&type==='Turno'&&!eligibleForStore(e,store)){unauthorized.push(empInfo.label+' · '+dates[d]+' → '+storeNameOf(store));blockedReason='mobilita'}
       const h=storeDay(store,dates[d]);
-      if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+first);blockedReason=blockedReason||'chiuso'}
+      if(h&&h.closed){closed.push(storeNameOf(store)+' · '+dates[d]+' · '+empInfo.label);blockedReason=blockedReason||'chiuso'}
       if(type==='Turno'&&approvedAbsence(e.id,dates[d]))blockedReason=blockedReason||'assenza';
       records.push({emp:e.id,date:dates[d],store,type,orarioDaDefinire:type==='Turno',raw,sourceRow:r+1,blockedReason});
     }
   }
-  if(!records.length)throw new Error('Nessuna riga di turni riconosciuta nel file.');
-  return{week,weekNo,dates,records,unmatched,ambiguous,unauthorized,closed,warnings,fileName,storeLabels:[...new Set(records.map(x=>x.store))]};
+  if(!records.length)throw new Error('Nessuna riga di turni riconosciuta nel file. Verifica che il file contenga i nomi dei lavoratori e le colonne dei giorni Lun-Dom.');
+  return{week,weekNo,dates,records,unmatched,ambiguous,unauthorized,closed,warnings,fileName,storeLabels:[...new Set(records.map(x=>x.store).filter(Boolean))]};
 }
 function renderExcelImportPreview(plan){
   const box=document.getElementById('excelImportPreview');if(!box)return;
