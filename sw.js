@@ -5,16 +5,8 @@ self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET') return;
   const url=new URL(event.request.url);
   if(url.origin!==location.origin) return;
-  event.respondWith(fetch(event.request,{cache:'no-store'}).then(async response=>{
-    if(response.ok){
-      if(url.pathname.endsWith('/app-v4.html')){
-        const html=await response.text();
-        const pos=html.lastIndexOf('</body>');
-        const injected=pos>=0?html.slice(0,pos)+'<script src="./excel-import-fix.js?build=30"></script>'+html.slice(pos):html;
-        response=new Response(injected,{status:response.status,statusText:response.statusText,headers:response.headers});
-      }
-      const copy=response.clone();caches.open(VERSION).then(cache=>cache.put(event.request,copy));
-    }
+  event.respondWith(fetch(event.request,{cache:'no-store'}).then(response=>{
+    if(response.ok){const copy=response.clone();caches.open(VERSION).then(cache=>cache.put(event.request,copy));}
     return response;
   }).catch(()=>caches.match(event.request)));
 });
